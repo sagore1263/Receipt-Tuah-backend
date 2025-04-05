@@ -7,16 +7,14 @@ const ChatAssistant = () => {
   const [message, setMessage] = useState('');
   const [conversation, setConversation] = useState([]);
   const [loading, setLoading] = useState(false);
-
   const API_KEY = 'AIzaSyCaAEMD3UyCQEPwEaRL6cQwR3bc5kwgWzk';
   const API_URL = 'http://127.0.0.1:8000/ai';
 
   const handleSend = async () => {
     if (!message.trim() || loading) return;
-
+  
     try {
       setLoading(true);
-      // Add user message to conversation
       setConversation(prev => [...prev, { type: 'user', content: message }]);
       
       const response = await fetch(`${API_URL}?subject=${encodeURIComponent(message)}`, {
@@ -25,19 +23,21 @@ const ChatAssistant = () => {
           'Content-Type': 'application/json'
         }
       });
-
-      // Convert headers to object
-      const headers = {};
-      response.headers.forEach((value, name) => {
-        headers[name] = value;
-      });
-
-      // Add API response to conversation
+  
+      // Get both headers and body content
+      const headers = Object.fromEntries(response.headers.entries());
+      const data = await response.json();
+      console.log('Data:', data);
+     // console.log('Headers:', headers);
+      // Store both headers and content in state
       setConversation(prev => [...prev, { 
         type: 'response', 
-        content: headers 
+        content: {
+          headers,
+          body: data // Extract just the content string from response
+        }
       }]);
-      
+  
       setMessage('');
     } catch (error) {
       setConversation(prev => [...prev, { 
@@ -71,20 +71,28 @@ const ChatAssistant = () => {
           </div>
           
           <div className="chat-messages">
-            {conversation.map((msg, index) => (
-              <div key={index} className={`message ${msg.type}`}>
-                {msg.type === 'user' && <div className="user-msg">{msg.content}</div>}
-                {msg.type === 'response' && (
-                  <div className="response-msg">
-                    <h4>Response Headers:</h4>
-                    <pre>{JSON.stringify(msg.content, null, 2)}</pre>
-                  </div>
-                )}
-                {msg.type === 'error' && (
-                  <div className="error-msg">{msg.content}</div>
-                )}
-              </div>
-            ))}
+          {conversation.map((msg, index) => (
+    <div key={index} className={`message ${msg.type}`}>
+      {msg.type === 'user' && (
+        <div className="user-msg">{msg.content}</div>
+      )}
+      {msg.type === 'response' && (
+        <div className="response-msg">
+          <div className="ai-response-text">
+            {/* Display just the content body */}
+            {msg.content.body}
+          </div>
+          {/* Optional: Display headers in debug view */}
+          {/* <div className="debug-headers">
+            <pre>{JSON.stringify(msg.content.headers, null, 2)}</pre>
+          </div> */}
+        </div>
+      )}
+      {msg.type === 'error' && (
+        <div className="error-msg">{msg.content}</div>
+      )}
+    </div>
+  ))}
             {loading && <div className="loading">Loading...</div>}
           </div>
           
