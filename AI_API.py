@@ -43,13 +43,17 @@ async def convert_image_to_text(path):
         model="gemini-2.0-flash-thinking-exp-01-21",
         contents=["Convert this to text", image])
     return response.text
+dict_prompt = """Convert this receipt text into a dictionary. Use the following format - 
+Date : (DD/MM/YYYY), Time : (time), Merchant : (merchant), Location : (location), Items : [{name : (ex : burger, onion, etc.), quantity : (quantity), price : (price)}], Category :(ex : food, entertainment, home, etc.), Subcategory : (ex : lunch, dinner, furniture, etc.), Total : (total), Tax : (tax), Other : {json}
+If some of the fields are not available, just leave them blank. Put any field not listed in the "Other" field.
+Just output the dictionary and nothing else."""
 async def receipt_to_dict(text):
     global chat
     global model
 
     response = model.models.generate_content(
-        model="gemini-2.0-flash-thinking-exp-01-21",
-        contents=["Convert this receipt text into a dictionary. Just output the dictionary and nothing else", text])
+        model="gemini-2.0-flash",
+        contents=[dict_prompt, text])
     return response.text
 async def ai_image_to_dict(image):
     global chat
