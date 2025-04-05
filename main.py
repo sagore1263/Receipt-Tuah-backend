@@ -1,9 +1,17 @@
 from fastapi import FastAPI
-
+from fastapi.middleware.cors import CORSMiddleware
 
 import AI_API as ai
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # For development only
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/")
 def home_view():
