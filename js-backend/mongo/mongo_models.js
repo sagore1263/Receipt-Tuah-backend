@@ -23,7 +23,7 @@ const purchaseSchema = new mongoose.Schema({
     account: { type: mongoose.Schema.Types.ObjectId, ref: 'Account', default: null },
     date: { type: Date, default: defaultDate },
     total: { type: Number, default: defaultNumber },
-    items: { type: [mongoose.Schema.Types.ObjectId], ref: 'Item', default: defaultArray },
+    items: { type: [mongoose.Schema.Types.ObjectId], ref: 'Item', default: () => [] },
     receipt: { type: mongoose.Schema.Types.ObjectId, ref: 'Receipt', default: null }, // Buffer for image data
 }, { strict: false });
 
@@ -43,7 +43,7 @@ const itemSchema = new mongoose.Schema({
 // Category
 const categorySchema = new mongoose.Schema({
     account: { type: mongoose.Schema.Types.ObjectId, ref: 'Account', default: null },
-    items: { type: mongoose.Schema.Types.ObjectId, ref: 'Item', default: null },
+    items: { type: [mongoose.Schema.Types.ObjectId], ref: 'Item', default: () => [] },
     name: { type: String, default: null },
 }, { strict: false });
 
