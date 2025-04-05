@@ -1,8 +1,11 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
 import AI_API as ai
-
+import str_format as sf
+import json
+from PIL import Image
+import io
 app = FastAPI()
 
 app.add_middleware(
@@ -31,12 +34,16 @@ async def ai_image():
 
 @app.get("/image-to-text")
 async def ai_image_to_text(path: str):
-    return await ai.convert_image_to_text(path)
-
-@app.get("/clear")
-async def ai_clear():
-    return ai.clear_chat()
-
+    text = await ai.convert_image_to_text(path)
+    result = await ai.receipt_to_dict(text)
+    result = sf.clean_and_parse_json_string(result)
+    return json.loads(result)
+@app.post("/upload-image/")
+async def upload_image(file: UploadFile = File(...)):
+    contents = await file.read()
+    image = Image.open(io.BytesIO(contents))
+    # Do your image processing here
+    return await ai.ai_image_to_dict(image)
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app)
