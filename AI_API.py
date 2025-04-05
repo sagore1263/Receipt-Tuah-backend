@@ -1,6 +1,7 @@
 from google import genai
 from dotenv import load_dotenv
 import os
+import json
 
 import PIL.Image
 
@@ -39,3 +40,11 @@ async def convert_image_to_text(path):
         model="gemini-2.0-flash",
         contents=["Convert this to text", image])
     return response.text
+async def receipt_to_dict(text):
+    global chat
+    global model
+
+    response = model.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=["Convert this receipt text into a dictionary. Just output the dictionary and nothing else", text])
+    return json.loads(response.text)
