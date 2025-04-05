@@ -16,7 +16,9 @@ async def ai_speak(subject: str):
 async def ai_view():
     return await ai.generate_response("Hi, what is your name?")
     
-
+@app.get("/image")
+async def ai_image():
+    return await ai.generate_image_summary()
 
 if __name__ == "__main__":
     import uvicorn

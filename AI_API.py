@@ -2,6 +2,8 @@ from google import genai
 from dotenv import load_dotenv
 import os
 
+import PIL.Image
+
 load_dotenv()
 
 global model
@@ -15,4 +17,15 @@ async def generate_response(prompt):
     global model
 
     response = await chat.send_message(prompt)
+    return response.text
+
+async def generate_image_summary():
+    global chat
+    global model
+
+    image = PIL.Image.open('image.png')
+
+    response = model.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=["What is this image?", image])
     return response.text
