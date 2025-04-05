@@ -1,10 +1,14 @@
 from google import genai
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 global model
-model = genai.Client(api_key="AIzaSyAItJFii-704bJ6YfZb6GfZ-gVfmu117bo")
+model = genai.Client(api_key=os.getenv("API_KEY"))
 
 global chat
-chat = client.aio.chats.create(model = "gemini-2.5-pro-exp-03-25")
+chat = model.aio.chats.create(model = "gemini-2.5-pro-exp-03-25")
 
 async def generate_response(prompt):
     global chat

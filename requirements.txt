@@ -3,3 +3,4 @@ uvicorn
 google-genai
 pytesseract
 pillow
+python-dotenv
