@@ -20,6 +20,10 @@ async def ai_view():
 async def ai_image():
     return await ai.generate_image_summary()
 
+@app.get("/image-to-text")
+async def ai_image_to_text(path: str):
+    return await ai.convert_image_to_text(path)
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app)
