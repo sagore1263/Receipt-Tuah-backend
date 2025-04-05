@@ -33,6 +33,10 @@ async def ai_image():
 async def ai_image_to_text(path: str):
     return await ai.convert_image_to_text(path)
 
+@app.get("/clear")
+async def ai_clear():
+    return ai.clear_chat()
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app)
