@@ -39,18 +39,18 @@ app.post('/signup', async (req, res) => {
 
     if (exists) {
         return res.status(400).json({ message: 'Account already exists with this email' });
-    } else {
-        const account = new accounts({
-            email: email,
-            username: email.split('@')[0],
-            password: hash(password),
-        });
-
-        await account.save();
-        console.log('Account created: ', email);
     }
 
-    res.status(200).json({ message: 'Signup successful', email });
+    const account = new accounts({
+        email: email,
+        username: email.split('@')[0],
+        password: hash(password),
+    });
+
+    await account.save();
+    console.log('Account created: ', email);
+
+    return res.status(200).json({ message: 'Signup successful', email });
 });
 
 app.post('/login', async (req, res) => {
@@ -58,7 +58,15 @@ app.post('/login', async (req, res) => {
     // Perform login logic here
     console.log(`Login attempt with email: ${email} and password: ${password}`);
 
-    hash(password);
+    const account = await accounts.findOne({ email: email });
+
+    if (!account) {
+        return res.status(400).json({ message: 'Account does not exist with this email' });
+    }
+
+    if (hash(password) != account.password) {
+        return res.status(400).json({ message: 'Incorrect password' });
+    }
 
     res.status(200).json({ message: 'Login successful', email });
 });
