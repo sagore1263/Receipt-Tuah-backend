@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import './App.css';
 import { a } from 'framer-motion/client';
-
+import ChatAssistant from './ChatAssistant';
 const Login = ({ onLogin }) => {
   const [credentials, setCredentials] = useState({
     username: '',
@@ -151,7 +151,7 @@ const App = () => {
   return (
     <div className="app-container">
       <div className="sidebar">
-        <h1 className="logo">Recip</h1>
+        <h1 className="logo">Receipt Tuah</h1>
         <h2 className="sidebar-title">Records</h2>
         <div className="tabs-container">
           <TabButton name="Home" label="Home" />
@@ -164,6 +164,7 @@ const App = () => {
       {activeTab === 'TabX' && <TabContent>Tab X Content</TabContent>}
       {activeTab === 'TabY' && <TabContent>Tab Y Content</TabContent>}
       {activeTab === 'TabZ' && <TabContent>Tab Z Content</TabContent>}
+      <ChatAssistant />
     </div>
   );
 };
