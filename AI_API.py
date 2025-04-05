@@ -2,6 +2,7 @@ from google import genai
 from dotenv import load_dotenv
 import os
 
+load_dotenv()
 
 global model
 model = genai.Client(api_key=os.getenv("API_KEY"))
