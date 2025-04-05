@@ -10,11 +10,11 @@ global model
 model = genai.Client(api_key=os.getenv("API_KEY"))
 
 global chat
-chat = model.aio.chats.create(model = "gemini-2.0-flash-thinking-exp-01-21")
+chat = model.aio.chats.create(model = "gemini-2.5-pro-exp-03-25")
 
 def clear_chat():
     global chat
-    chat = model.aio.chats.create(model = "gemini-2.0-flash-thinking-exp-01-21")
+    chat = model.aio.chats.create(model = "gemini-2.5-pro-exp-03-25")
 
 async def generate_response(prompt):
     global chat
@@ -30,7 +30,7 @@ async def generate_image_summary():
     image = Image.open('image.png')
 
     response = model.models.generate_content(
-        model="gemini-2.0-flash",
+        model="gemini-2.0-flash-thinking-exp-01-21",
         contents=["What is this image?", image])
     return response.text
 async def convert_image_to_text(path):
@@ -40,7 +40,7 @@ async def convert_image_to_text(path):
     image = Image.open(path)
 
     response = model.models.generate_content(
-        model="gemini-2.0-flash",
+        model="gemini-2.0-flash-thinking-exp-01-21",
         contents=["Convert this to text", image])
     return response.text
 async def receipt_to_dict(text):
@@ -48,14 +48,14 @@ async def receipt_to_dict(text):
     global model
 
     response = model.models.generate_content(
-        model="gemini-2.0-flash",
+        model="gemini-2.0-flash-thinking-exp-01-21",
         contents=["Convert this receipt text into a dictionary. Just output the dictionary and nothing else", text])
     return response.text
 async def ai_image_to_dict(image):
     global chat
     global model
     response = model.models.generate_content(
-        model="gemini-2.0-flash",
+        model="gemini-2.0-flash-thinking-exp-01-21",
         contents=["Convert this to text", image])
     result = await receipt_to_dict(response.text)
     result = sf.clean_and_parse_json_string(result)
