@@ -8,7 +8,7 @@ const accountSchema = new mongoose.Schema({
 }, { strict: false });
 
 // Unrestricted schema for misc collection
-const globalSchema = new mongoose.Schema({}, { strict: false });
+// const globalSchema = new mongoose.Schema({}, { strict: false });
 
 const Account = mongoose.model('Account', accountSchema);
 // const Global = mongoose.model('Global', globalSchema);
