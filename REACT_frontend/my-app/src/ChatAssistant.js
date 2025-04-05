@@ -7,7 +7,6 @@ const ChatAssistant = () => {
   const [message, setMessage] = useState('');
   const [conversation, setConversation] = useState([]);
   const [loading, setLoading] = useState(false);
-
   const API_KEY = 'AIzaSyCaAEMD3UyCQEPwEaRL6cQwR3bc5kwgWzk';
   const API_URL = 'http://127.0.0.1:8000/ai';
 
@@ -77,7 +76,7 @@ const ChatAssistant = () => {
                 {msg.type === 'response' && (
                   <div className="response-msg">
                     <h4>Response Headers:</h4>
-                    <pre>{JSON.stringify(msg.content, null, 2)}</pre>
+                    <pre>{JSON.stringify(msg, null, 2)}</pre>
                   </div>
                 )}
                 {msg.type === 'error' && (

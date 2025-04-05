@@ -11,10 +11,8 @@ const Login = ({ onLogin }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Simple validation - replace with real authentication logic
     if (credentials.username && credentials.password) {
-      sessionStorage.setItem('isAuthenticated', 'true');
-      onLogin();
+      onLogin(credentials.username); // Pass username to parent
     }
   };
 
@@ -50,14 +48,18 @@ const App = () => {
   const [activeTab, setActiveTab] = useState('Home');
   const [images, setImages] = useState([]);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-
+  const [username, setUsername] = useState('');
   // Check authentication on mount
   useEffect(() => {
     const authStatus = sessionStorage.getItem('isAuthenticated');
     if (authStatus === 'true') {
       setIsAuthenticated(true);
     }
-    
+    const storedUsername = sessionStorage.getItem('username');
+    if (authStatus === 'true' && storedUsername) {
+      setIsAuthenticated(true);
+      setUsername(storedUsername);
+    }
     // Load images from localStorage
     const savedImages = localStorage.getItem('images');
     if (savedImages) {
@@ -93,10 +95,26 @@ const App = () => {
     });
   };
 
+   // Update login handler
+   const handleLogin = (username) => {
+    sessionStorage.setItem('isAuthenticated', 'true');
+    sessionStorage.setItem('username', username);
+    setIsAuthenticated(true);
+    setUsername(username);
+  };
+
   const handleLogout = () => {
     sessionStorage.removeItem('isAuthenticated');
+    sessionStorage.removeItem('username');
     setIsAuthenticated(false);
-    // Images remain in localStorage
+    setUsername('');
+  };
+  const handleDeleteImage = (indexToDelete) => {
+    setImages(prev => {
+      const updatedImages = prev.filter((_, index) => index !== indexToDelete);
+      localStorage.setItem('images', JSON.stringify(updatedImages));
+      return updatedImages;
+    });
   };
 
   const TabButton = ({ name, label }) => (
@@ -112,6 +130,7 @@ const App = () => {
     <div className="content-area">
       <div className="header-row">
         <h2>{children}</h2>
+          <p>Welcome, {username}</p>
         <button onClick={handleLogout} className="logout-button">
           Logout
         </button>
@@ -136,6 +155,12 @@ const App = () => {
                 alt={image.name}
                 className="preview-image"
               />
+               <button 
+              className="delete-image-btn"
+              onClick={() => handleDeleteImage(index)}
+            >
+              x
+            </button>
               <p>{image.name}</p>
             </div>
           ))}
@@ -145,7 +170,7 @@ const App = () => {
   );
 
   if (!isAuthenticated) {
-    return <Login onLogin={() => setIsAuthenticated(true)} />;
+    return <Login onLogin={handleLogin} />;
   }
 
   return (

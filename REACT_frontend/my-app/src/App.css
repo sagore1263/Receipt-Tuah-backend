@@ -279,3 +279,50 @@
   color: #666;
   padding: 10px;
 }
+
+/* Image delete button styles */
+.delete-image-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.9;
+  transition: opacity 0.2s;
+}
+
+.delete-image-btn:hover {
+  opacity: 1;
+}
+
+.image-preview {
+  position: relative; /* Add this for absolute positioning of delete button */
+  /* ... existing styles ... */
+}
+/* User greeting styles */
+.user-greeting {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.user-greeting p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
