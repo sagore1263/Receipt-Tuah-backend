@@ -10,7 +10,11 @@ global model
 model = genai.Client(api_key=os.getenv("API_KEY"))
 
 global chat
-chat = model.aio.chats.create(model = "gemini-2.5-pro-exp-03-25")
+chat = model.aio.chats.create(model = "gemini-2.0-flash-thinking-exp-01-21")
+
+def clear_chat():
+    global chat
+    chat = model.aio.chats.create(model = "gemini-2.0-flash-thinking-exp-01-21")
 
 async def generate_response(prompt):
     global chat
