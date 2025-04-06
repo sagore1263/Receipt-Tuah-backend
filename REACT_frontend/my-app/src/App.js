@@ -75,9 +75,9 @@ const App = () => {
 const [userId, setUserId] = useState('');
 const [chartLoading, setChartLoading] = useState(true);
 const [chartError, setChartError] = useState(null);
-
+const [chart,setChart]=useState(false);
 useEffect(() => {
-  if (userId) {
+  if (userId || chart) {
     setChartLoading(true);
     fetch(`http://localhost:8000/category-pie-chart?id=${userId}`)
       .then(response => {
@@ -101,7 +101,7 @@ useEffect(() => {
       })
       .finally(() => setChartLoading(false));
   }
-}, [userId]);
+}, [userId, chart]);
   // Add state for selected category
   const [selectedCategory, setSelectedCategory] = useState(null);
 const sampleCategoryData = [
@@ -207,14 +207,29 @@ const sampleCategoryData = [
         })
         .then(response => {
           if (!response.ok) throw new Error('Upload failed');
+          console.log('Image uploaded successfully');
           return response.json();
         })
         .then(receiptData => {
-          // Update receipts state with image ID mapping
-          setReceipts(prev => ({
-            ...prev,
-            [image.id]: receiptData // Store receipt data by image ID
-          }));
+          console.log('Upload success:', receiptData);
+          setReceipts(prev => [...prev, receiptData]);
+          const accountId = sessionStorage.getItem('accountId');
+          return fetch('http://localhost:3001/receipt', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            id: accountId,
+            purchase: receiptData
+          })
+        })
+        .then(response => {
+          if(response.ok){
+            setChart(true);
+          }
+          return response.json();
+        });
         })
         .catch(error => console.error('Upload error:', error));
       });
@@ -239,7 +254,7 @@ const sampleCategoryData = [
     fetch(`http://localhost:8000/set-id?id=${accountId}`)
       .then(response => {
         if (!response.ok) throw new Error('ID setting failed');
-        return response.text();
+        return response.json();
       })
       .then(id => {
         console.log('ID set to:', id);
