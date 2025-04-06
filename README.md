@@ -6,4 +6,4 @@ Contributions of members:
 Adin Lieblien - Handled everything related to MongoDB and an helped API for integration with Python API  
 Aditya Yellapuntula Venkata - Handled Gemini integration with Python Backend and contribution to Frontend features.  
 Anirudh Jagannath - Integrated Adin's API, Python API, and the frontend in the whole design. Frontend Contribution.  
-Swapnil Gore - Most Frontend contribution. Built the backbone of our frontend.
+Swapnil Gore - Frontend contribution. Built most of our website.
