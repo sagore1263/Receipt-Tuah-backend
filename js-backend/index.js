@@ -415,7 +415,7 @@ app.get('/itemsByCategory', async (req, res) => {
             path: 'subcategory',
             select: 'name -_id',
         }
-    }).lean();
+    });
 
     const [total, quantity] = result.items.reduce(([acct, accq], item) => {
         return [acct + item.price, accq + item.quantity];
@@ -444,7 +444,7 @@ app.get('/itemsBySubcategory', async (req, res) => {
     const result = await subcategoryDoc.populate({
         path: 'items',
         select: 'name quantity purchase price -_id',
-    }).lean();
+    });
 
     const [total, quantity] = result.items.reduce(([acct, accq], item) => {
         return [acct + item.price, accq + item.quantity];
