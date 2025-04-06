@@ -54,8 +54,6 @@ app.use(express.json({ limit: '10mb' }));
 
 app.post('/signup', async (req, res) => {
     const { email, password } = req.body;
-    // Perform login logic here
-    console.log(`Login attempt with email: ${email} and password: ${password}`);
 
     const exists = !!await accounts.findOne({ email: email });
 
@@ -79,8 +77,6 @@ app.post('/signup', async (req, res) => {
 
 app.post('/login', async (req, res) => {
     const { email, password } = req.body;
-    // Perform login logic here
-    console.log(`Login attempt with email: ${email} and password: ${password}`);
 
     const account = await accounts.findOne({ email: email }).lean();
 
