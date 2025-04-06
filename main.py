@@ -159,8 +159,10 @@ async def page_view(cat: str, date: str):
         prices_graph.append({"price": item["price"]})
 
     counts = {{}}
+    item_names = set()
     for item in data["items"]:
         counts[item["name"]] = {"price": counts.get(item["name"], 0) + item["price"], "quantity": counts.get(item["name"], 0) + item["quantity"]}
+        item_names.add(item["name"])
 
     get_screen_view({"list": data["items"], 
             "total": data["total"], 
@@ -172,6 +174,7 @@ async def page_view(cat: str, date: str):
             "total": data["total"], 
             "average": data["average"], 
             "prices_graph": prices_graph,
+            "item_names": list(item_names),
             "statistics": counts}
 @app.get("/get-recent-receipts")
 async def get_recent_receipts():
