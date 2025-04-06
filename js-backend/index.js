@@ -10,20 +10,29 @@ const initCategories = require('@m/init_categories.js');
 const app = express();
 const PORT = process.env.MONGO_PORT || 3001;
 
+const itemCategoryPop = [
+    {
+        path: 'category',
+        select: 'name -_id',
+    },
+    {
+        path: 'subcategory',
+        select: 'name -_id',
+    }
+];
 const purchasePopulate = [
     {
         path: 'items',
         select: '-purchase -__v -_id',
-        // populate: {
-        //     path: ''
-        // }
+        populate: itemCategoryPop
     }
 ];
 
 const purchasePopulateImage = [
     {
         path: 'items',
-        select: '-purchase -__v -_id'
+        select: '-purchase -__v -_id',
+        populate: itemCategoryPop
     },
     {
         path: 'receipt',
@@ -352,43 +361,39 @@ app.get('/recentPurchases', async (req, res) => {
 /**
  * Get purchases within X days, filter by category
  */
-// app.get('/recentCategory', async (req, res) => {
-//     const { id, days, category } = req.query;
+app.get('/recentCategory', async (req, res) => {
+    const { id, days, category } = req.query;
 
-//     console.log(`Recent purchases for: ${id}`);
+    console.log(`Recent purchases for: ${id}`);
 
-//     if (Number.isNaN(Number(days))) {
-//         return res.status(400).json({ message: `Invalid days param: ${days}` });
-//     }
+    if (Number.isNaN(Number(days))) {
+        return res.status(400).json({ message: `Invalid days param: ${days}` });
+    }
 
-//     const account = await accounts.findById(id);
-//     const categoryDoc = await categories.findOne({ account: id, name: category });
+    const account = await accounts.findById(id);
+    const categoryDoc = await categories.findOne({ account: id, name: category });
 
-//     if (!account) {
-//         return res.status(400).json({ message: `Failed to find account with id ${id}` });
-//     } else if (!categoryDoc) {
-//         return res.status(400).json({ message: `Category ${category} does not exist` });
-//     }
+    if (!account) {
+        return res.status(400).json({ message: `Failed to find account with id ${id}` });
+    } else if (!categoryDoc) {
+        return res.status(400).json({ message: `Category ${category} does not exist` });
+    }
 
-//     const unixdate = Date.now() - (Number(days) * ONE_DAY);
+    const unixdate = Date.now() - (Number(days) * ONE_DAY);
 
-//     const resultP = await purchases.find({ account: id, date: { $gt: unixdate } }).lean().populate(image ? purchasePopulateImage : purchasePopulate);
+    const resultP = await purchases.find({ account: id, date: { $gt: unixdate } }).lean().populate(image ? purchasePopulateImage : purchasePopulate);
 
-//     const result = [];
-//     for (const purchase of resultP) {
-//         const categoryItems = purchase.items.filter(item => {
-//             const itemCategory = categoryDoc.items.filter(catItem => catItem._id.toString() == item._id.toString())[0];
-//             return !!itemCategory;
-//         });
-//         purchase.items = categoryItems;
-//     }
+    const result = [];
+    for (const purchase of resultP) {
+        result.push(...purchase.items.filter(item => item.category?.name === category));
+    }
 
-//     const [total, quantity] = result.reduce(([acct, accq], item) => {
-//         return [acct + item.price, accq + item.quantity];
-//     }, [0, 0]);
+    const [total, quantity] = result.reduce(([acct, accq], item) => {
+        return [acct + item.price, accq + item.quantity];
+    }, [0, 0]);
 
-//     res.status(200).json({ message: 'success', items: , total: total, average: total / quantity });
-// });
+    res.status(200).json({ message: 'success', items: result, total: total, average: total / quantity });
+});
 
 /**
  * Get items by category
