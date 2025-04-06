@@ -75,9 +75,10 @@ const App = () => {
 const [userId, setUserId] = useState('');
 const [chartLoading, setChartLoading] = useState(true);
 const [chartError, setChartError] = useState(null);
-const [chart,setChart]=useState(false);
+const [chartRefreshTrigger, setChartRefreshTrigger] = useState(0);
+
 useEffect(() => {
-  if (userId || chart) {
+  if (userId) {
     setChartLoading(true);
     fetch(`http://localhost:8000/category-pie-chart?id=${userId}`)
       .then(response => {
@@ -101,7 +102,7 @@ useEffect(() => {
       })
       .finally(() => setChartLoading(false));
   }
-}, [userId, chart]);
+}, [userId, chartRefreshTrigger]);
   // Add state for selected category
   const [selectedCategory, setSelectedCategory] = useState(null);
 const sampleCategoryData = [
@@ -225,9 +226,8 @@ const sampleCategoryData = [
           })
         })
         .then(response => {
-          if(response.ok){
-            setChart(true);
-          }
+          // Trigger chart refresh by incrementing the refresh trigger
+        setChartRefreshTrigger(prev => prev + 1);
           return response.json();
         });
         })
