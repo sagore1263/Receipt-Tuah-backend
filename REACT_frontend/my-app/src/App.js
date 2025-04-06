@@ -3,8 +3,6 @@ import './App.css';
 import ChatAssistant from './ChatAssistant';
 import { login, signup } from './AuthService';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import Webcam from 'react-webcam';
-import { useRef } from 'react';
 
 const Login = ({ onLogin }) => {
   const [isLogin, setIsLogin] = useState(true);
@@ -86,165 +84,134 @@ const [location, setLocation] = useState(
 );
 const [locationStatus, setLocationStatus] = useState('');
 const [selectedCategory, setSelectedCategory] = useState(null);
-const webRef = useRef(null);
-  const showImage = () => {
-    const file = webRef.current.getScreenshot();
-    console.log(file);
+const [days, setDays] = useState(0);
+const [isLoading, setIsLoading] = useState(false);
+const [pageData, setPageData] = useState(null);
+const [pageLoading, setPageLoading] = useState(false);
+const [pageError, setPageError] = useState(null);
 
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("email", username);
-  
-        fetch('http://localhost:8000/upload-image', {
-          method: 'POST',
-          body: formData,
-          headers: {
-            'Authorization': `Bearer ${sessionStorage.getItem('token')}`
-          }
-        }).then(response => {
-          if (!response.ok) throw new Error('Upload failed');
-          return response.json();
-        }).catch(error => console.error('Upload error:', error));
-  };
-
-  useEffect(() => {
-    if (userId) {
-      setChartLoading(true);
-      fetch(`http://localhost:8000/category-pie-chart?id=${userId}`)
-        .then(response => {
-          if (!response.ok) throw new Error('Failed to fetch categories');
-          const yur = response.json();
-          console.log(yur)
-          return yur;
-        })
-        .then(data => {
-          // Transform API response to Recharts format
-          const formattedData = Object.entries(data).map(([name, value]) => ({
-            name,
-            value
-          }));
-          setCategoryData(formattedData);
-          setChartError(null);
-        })
-        .catch(error => {
-          console.error('Chart data error:', error);
-          setChartError(error.message);
-        })
-        .finally(() => setChartLoading(false));
-    }
-  }, [userId, chartRefreshTrigger]);
-
-  const fetchSubcategoryData = (category) => {
-    setSubcategoryLoading(true);
-    fetch(`http://localhost:8000/subcategory-pie-chart?id=${userId}&category=${category}`)
+useEffect(() => {
+  if (userId) {
+    setChartLoading(true);
+    fetch(`http://localhost:8000/category-pie-chart?id=${userId}`)
       .then(response => {
-        if (!response.ok) throw new Error('Failed to fetch subcategories');
-        return response.json();
+        if (!response.ok) throw new Error('Failed to fetch categories');
+        const yur = response.json();
+        console.log(yur)
+        return yur;
       })
       .then(data => {
+        // Transform API response to Recharts format
         const formattedData = Object.entries(data).map(([name, value]) => ({
           name,
           value
         }));
-        setSubcategoryData(formattedData);
-        setViewingSubcategories(true);
+        setCategoryData(formattedData);
+        setChartError(null);
       })
       .catch(error => {
-        console.error('Subcategory data error:', error);
+        console.error('Chart data error:', error);
+        setChartError(error.message);
       })
-      .finally(() => setSubcategoryLoading(false));
-  };
+      .finally(() => setChartLoading(false));
+  }
+}, [userId, chartRefreshTrigger]);
+  
+// Add useEffect for fetching category data
+useEffect(() => {
+  if (userId) {
+    setPageLoading(true);
+    fetch(`http://localhost:8000/get-page-value?cat=Entertainment,days=30`, {
+      headers: {
+        'Authorization': `Bearer ${sessionStorage.getItem('token')}`
+      }
+    })
+    .then(response => {
+      if (!response.ok) throw new Error('Failed to fetch page data');
+      return response.json();
+    })
+    .then(data => {
+      setPageData(data);
+      setPageError(null);
+    })
+    .catch(error => {
+      console.error('Page data error:', error);
+      setPageError(error.message);
+    })
+    .finally(() => setPageLoading(false));
+  }
+}, [userId]);
 
-  const handleBackButton = () => {
-    setViewingSubcategories(false);
-    setCurrentCategory(null);
-  };
 
-  const CategoryPieChart = () => {
-    const handleCategoryClick = (category) => {
-      setCurrentCategory(category);
-      fetchSubcategoryData(category);
-    };
+  // Create chart component
+  const CategoryPieChart = () => (
+    <div className="chart-container">
+      {chartLoading ? (
+        <div className="loading-message">Loading chart data...</div>
+      ) : chartError ? (
+        <div className="error-message">Error loading chart: {chartError}</div>
+      ) : categoryData.length > 0 ? (
+        <ResponsiveContainer width="100%" height={300}>
+          <PieChart>
+            <Pie
+              data={categoryData}
+              cx="50%"
+              cy="50%"
+              innerRadius={60}
+              outerRadius={80}
+              paddingAngle={5}
+              dataKey="value"
+              onClick={(data) => setSelectedCategory(data.name)}
+            >
+              {categoryData.map((entry, index) => (
+                <Cell 
+                  key={`cell-${index}`} 
+                  fill={COLORS[index % COLORS.length]}
+                  stroke="#fff"
+                />
+              ))}
+            </Pie>
+            <Tooltip />
+            <Legend />
+          </PieChart>
+        </ResponsiveContainer>
+      ) : (
+        <div className="no-data-message">No spending data available</div>
+      )}
+    </div>
+  );
 
-    return (
-      <div className="chart-container">
-        <div className="chart-header">
-          <h3>
-            {viewingSubcategories ? `${currentCategory} Subcategories` : 'Spending by Category'}
-          </h3>
-          {viewingSubcategories && (
-            <button className="back-button" onClick={handleBackButton}>
-              ← Back to Categories
-            </button>
-          )}
-        </div>
-
-        {/* Loading States */}
-        {(viewingSubcategories ? subcategoryLoading : chartLoading) ? (
-          <div className="loading-message">Loading chart data...</div>
-        ) : viewingSubcategories ? (
-          // Subcategory Pie Chart
-          subcategoryData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={subcategoryData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {subcategoryData.map((entry, index) => (
-                    <Cell 
-                      key={`cell-${index}`} 
-                      fill={COLORS[index % COLORS.length]}
-                      stroke="#fff"
-                    />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="no-data-message">No subcategory data available</div>
-          )
-        ) : chartError ? (
-          // Error display
-          <div className="error-message">Error loading chart: {chartError}</div>
-        ) : categoryData.length > 0 ? (
-          // Main Category Pie Chart
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={categoryData}
-                cx="50%"
-                cy="50%"
-                innerRadius={60}
-                outerRadius={80}
-                paddingAngle={5}
-                dataKey="value"
-                onClick={(data) => handleCategoryClick(data.name)}
-              >
-                {categoryData.map((entry, index) => (
-                  <Cell 
-                    key={`cell-${index}`} 
-                    fill={COLORS[index % COLORS.length]}
-                    stroke="#fff"
-                  />
-                ))}
-              </Pie>
-              <Tooltip />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
-        ) : (
-          <div className="no-data-message">No spending data available</div>
-        )}
-      </div>
-    );
+  const handleLocationSubmit = async () => {
+    try {
+      const response = await fetch('http://localhost:3001/setSettings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          settings: {
+            location: location,
+            useLocation: useLocation,
+          },
+          id: userId
+        })
+      });
+  
+      if (!response.ok) throw new Error('Location update failed');
+      
+      const data = await response.json();
+      setLocationStatus('Location updated successfully!');
+      sessionStorage.setItem('userLocation', location);
+      
+      // Clear status after 3 seconds
+      setTimeout(() => setLocationStatus(''), 3000);
+      
+    } catch (error) {
+      console.error('Location error:', error);
+      setLocationStatus('Error updating location');
+      setTimeout(() => setLocationStatus(''), 3000);
+    }
   };
 
   useEffect(() => {
@@ -376,6 +343,74 @@ const webRef = useRef(null);
     });
   };
 
+  const fetchRecentReceipts = async () => {
+    if (days <= 0) return;
+    
+    setIsLoading(true);
+    try {
+      const response = await fetch(`http://localhost:8000/get-recent-receipts?days=${days}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch receipts');
+      }
+      
+      const data = await response.json();
+      console.log(data)
+      setReceipts(data);
+    } catch (error) {
+      console.error('Error fetching receipts:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Create CategoriesTab component
+const CategoriesTab = () => (
+  <div className="content-area">
+    <div className="header-row">
+      <div className="user-greeting">
+        <h2>Category Analysis</h2>
+        <p>Your spending breakdown</p>
+      </div>
+    </div>
+
+    {pageLoading ? (
+      <div className="loading-message">Analyzing your spending...</div>
+    ) : pageError ? (
+      <div className="error-message">{pageError}</div>
+    ) : pageData ? (
+      <div className="cost-analysis">
+        <div className="cost-card total-cost">
+          <h3>Total Spending</h3>
+          <div className="cost-value">
+            ${pageData.totalCost.toFixed(2)}
+          </div>
+          <div className="cost-period">
+            All time
+          </div>
+        </div>
+        
+        <div className="cost-card average-cost">
+          <h3>Average Monthly</h3>
+          <div className="cost-value">
+            ${pageData.averageCost.toFixed(2)}
+          </div>
+          <div className="cost-period">
+            Per month
+          </div>
+        </div>
+      </div>
+    ) : (
+      <div className="no-data">No spending data available</div>
+    )}
+  </div>
+);
+
   const TabButton = ({ name, label }) => (
     <button 
       className={`tab-button ${activeTab === name ? 'active' : ''}`}
@@ -399,7 +434,7 @@ const webRef = useRef(null);
         Category: "Food",
         Items: [{ name: "Apples", price: 5.00 }, { name: "Bread", price: 3.00 }]
       },
-      // Add more sample receipts...
+  
     ];
   
     return (
@@ -413,7 +448,7 @@ const webRef = useRef(null);
   
         {/* Analytics Section */}
         <div className="analytics-section">
-          <h3>Spending Overview</h3>
+          <h3>Spending overview by category</h3>
           <div className="chart-container">
             <CategoryPieChart />
           </div>
@@ -484,8 +519,6 @@ const webRef = useRef(null);
           <label htmlFor="upload-input" className="upload-button">
             Upload image
           </label>
-          <Webcam ref={webRef} />
-          <button onClick={() => {showImage();}} className="capture-button">Capture</button>
           <div className="image-preview-container">
             {images.map((image, index) => (
               <div key={index} className="image-preview">
@@ -520,14 +553,83 @@ const webRef = useRef(null);
         <h2 className="sidebar-title">Records</h2>
         <div className="tabs-container">
           <TabButton name="Home" label="Home" />
-          <TabButton name="TabX" label="Tabx" />
+          <TabButton name="Categories" label="Categories" />
           <TabButton name="History" label="History" />
           <TabButton name="Settings" label="Settings" />
         </div>
       </div>
       {activeTab === 'Home' && <TabContent>Home</TabContent>}
-      {activeTab === 'TabX' && <TabContent>Tab X Content</TabContent>}
-      {activeTab === 'History' && <TabContent>Tab Y Content</TabContent>}
+      {activeTab === 'Categories' && <CategoriesTab />}
+      {activeTab === 'History' && (
+  <div className="content-area">
+    <div className="header-row">
+      <div className="user-greeting">
+        <h2>History</h2>
+        <p>Recent Receipts</p>
+      </div>
+      <div className="days-input-container">
+        <input
+          type="number"
+          placeholder="Days"
+          value={days}
+          onChange={(e) => setDays(e.target.value)}
+          className="days-input"
+        />
+        <button 
+          onClick={fetchRecentReceipts} 
+          className="fetch-button"
+        >
+          Fetch Receipts
+        </button>
+      </div>
+    </div>
+    
+    {isLoading ? (
+      <div className="loading-message">Loading receipts...</div>
+    ) : (
+      <div className="receipts-table-container">
+        <table className="receipts-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Merchant</th>
+              <th>Total</th>
+              <th>Receipt ID</th>
+            </tr>
+          </thead>
+          <tbody>
+            {receipts.map((receipt, index) => {
+              const [dateString, merchant, total, receiptId] = receipt;
+              const date = new Date(dateString);
+              
+              return (
+                <tr key={index} className="receipt-row">
+                  <td>
+                    {date.toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </td>
+                  <td className="merchant-cell">{merchant}</td>
+                  <td className="total-cell">
+                    ${total.toFixed(2)}
+                  </td>
+                  <td className="receipt-id">{receiptId}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        {receipts.length === 0 && (
+          <div className="no-receipts">No receipts found for this period</div>
+        )}
+      </div>
+    )}
+  </div>
+)}
       {activeTab === 'Settings' && (
   <div className="content-area">
     <div className="header-row">
