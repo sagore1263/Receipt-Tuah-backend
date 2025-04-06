@@ -17,11 +17,20 @@ app.add_middleware(
 )
 
 global enable_search
-enable_search = False 
+enable_search = False
+
+global id_user
+id_user=NONE
 
 @app.get("/")
 def home_view():
     return "Hello world"
+
+@app.get("/clear-chat")
+def clear_chat_view(id: str):
+    global id_user
+    id_user = id
+    ai.clear_chat()
 
 @app.get("/enable-search")
 def enable_search_view():
