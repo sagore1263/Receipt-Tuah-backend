@@ -2,6 +2,7 @@ import requests
 import mongo_API_calls as mAPI
 import asyncio
 import json
+import main
 
 # Replace with your actual server URL and port
 url = "http://127.0.0.1:8000/upload-image/"

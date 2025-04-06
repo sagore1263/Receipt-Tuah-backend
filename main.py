@@ -188,6 +188,7 @@ async def get_recent_receipts(days: int):
     data = json.loads(data_str) if isinstance(data_str, str) else data_str
     for receipt in data['purchases']:
         receipts.append([receipt['date'], receipt['merchant'], receipt['total'], receipt['receipt']])
+    return receipts
 @app.get("/screen-context")
 async def get_screen_view(thing):
     return await ai.get_screen_context(thing)
