@@ -34,7 +34,7 @@ global enable_search
 enable_search = False
 
 global id_user 
-id_user= "67f2559d107040926e28ab6f"
+id_user= None
 
 @app.get("/")
 def home_view():

@@ -18,7 +18,7 @@ categories = [
 async def stuff():
     for category in categories:
         print(f"Category: {category}")
-        items = await mAPI.get_category_items("67f2559d107040926e28ab6f", category)
+        items = await mAPI.get_category_items("d", category)
         for item in items['items']:
             print(f"Item: {item['name']}, Price: {item['price']}, subCategory: {item['subcategory']['name']}")
         else:
