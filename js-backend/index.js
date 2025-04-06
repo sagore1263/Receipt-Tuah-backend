@@ -15,7 +15,7 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true
   }));
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 /**
  * Utility
@@ -155,6 +155,9 @@ app.post('/receipt', async (req, res) => {
     res.status(200).json({ message: 'success', accountId: account._id });
 });
 
+/**
+ * Return fully populated user data
+ */
 app.get('/userdata', async (req, res) => {
     const { id } = req.query;
 
@@ -166,42 +169,48 @@ app.get('/userdata', async (req, res) => {
         return res.status(400).json({ message: `Failed to find account with id ${id}` });
     }
 
-    await account.populate({
-        path: 'data.purchases',
-        select: 'total date items receipt -_id',
-        populate: [
-            {
-                path: 'items',
-                select: 'name quantity price -_id'
-            },
-            {
-                path: 'receipt',
-                select: 'data size mode -_id'
-            }
-        ]
-    });
-    const { settings, data } = await account.populate({
-        path: 'data.categories',
-        select: 'name items subcategories -_id',
-        populate: [
-            {
-                path: 'items',
-                select: 'name quantity price -_id'
-            },
-            {
-                path: 'subcategories',
-                select: 'name items',
-                populate: {
+    // Populate the account with purchases and categories
+    const { settings, data } = await account.populate([
+        {
+            path: 'data.purchases',
+            select: 'total date items receipt -_id',
+            populate: [
+                {
                     path: 'items',
                     select: 'name quantity price -_id'
+                },
+                {
+                    path: 'receipt',
+                    select: 'data size mode -_id'
                 }
-            }
-        ]
-    });
+            ]
+        },
+        {
+            path: 'data.categories',
+            select: 'name items subcategories -_id',
+            populate: [
+                {
+                    path: 'items',
+                    select: 'name quantity price -_id'
+                },
+                {
+                    path: 'subcategories',
+                    select: 'name items',
+                    populate: {
+                        path: 'items',
+                        select: 'name quantity price -_id'
+                    }
+                }
+            ]
+        }
+    ]);
     console.log(`User data retrieved for account: ${id}`);
     res.status(200).json({ message: 'success', settings: settings, data: data });
 });
 
+/**
+ * Get receipt by id, deprecated
+ */
 app.get('/getreceipt', async (req, res) => {
     const { id } = req.query;
 
@@ -215,6 +224,141 @@ app.get('/getreceipt', async (req, res) => {
 
     console.log(`Receipt retrieved for id: ${id}`);
     res.status(200).json({ message: 'success', receipt: receipt });
+});
+
+const ONE_DAY = 86400000;
+/**
+ * Get purchases before date, exclusive
+ */
+app.get('/purchasesBeforeDate', async (req, res) => {
+    const { id, date } = req.query;
+
+    console.log(`Purchases before date for: ${id}`);
+
+    let unixdate;
+    try {
+        unixdate = dateConvert(date);
+    } catch {
+        return res.status(400).json({ message: `Invalid date param: ${date}` });
+    }
+
+    const account = await accounts.findById(id);
+
+    if (!account) {
+        return res.status(400).json({ message: `Failed to find account with id ${id}` });
+    }
+
+    const result = await purchases.find({ account: id, date: { $lt: unixdate } }).lean().populate([
+        {
+            path: 'items',
+            select: 'name quantity price -_id'
+        },
+        {
+            path: 'receipt',
+            select: 'data size mode -_id'
+        }
+    ]);
+
+    res.status(200).json({ message: 'success', purchases: result });
+});
+/**
+ * Get purchases between 2 dates, inclusive
+ */
+app.get('/purchasesBetweenDates', async (req, res) => {
+    const { id, date1, date2 } = req.query;
+
+    console.log(`Purchases between dates for: ${id}`);
+    let unixdate1;
+    let unixdate2;
+    try {
+        unixdate1 = dateConvert(date1);
+        unixdate2 = dateConvert(date2) + ONE_DAY;
+    } catch {
+        return res.status(400).json({ message: `Invalid date param(s): ${date1}, ${date2}` });
+    }
+
+    const account = await accounts.findById(id);
+
+    if (!account) {
+        return res.status(400).json({ message: `Failed to find account with id ${id}` });
+    }
+
+    const result = await purchases.find({ account: id, date: { $gt: unixdate1, $lt: unixdate2 } }).lean().populate([
+        {
+            path: 'items',
+            select: 'name quantity price -_id'
+        },
+        {
+            path: 'receipt',
+            select: 'data size mode -_id'
+        }
+    ]);
+
+    res.status(200).json({ message: 'success', purchases: result });
+});
+/**
+ * Get purchases after date, exclusive
+ */
+app.get('/purchasesAfterDate', async (req, res) => {
+    const { id, date } = req.query;
+
+    console.log(`Purchases after date for: ${id}`);
+
+    let unixdate;
+    try {
+        unixdate = dateConvert(date) + ONE_DAY;
+    } catch {
+        return res.status(400).json({ message: `Invalid date param: ${date}` });
+    }
+
+    const account = await accounts.findById(id);
+
+    if (!account) {
+        return res.status(400).json({ message: `Failed to find account with id ${id}` });
+    }
+
+    const result = await purchases.find({ account: id, date: { $gt: unixdate } }).lean().populate([
+        {
+            path: 'items',
+            select: 'name quantity price -_id'
+        },
+        {
+            path: 'receipt',
+            select: 'data size mode -_id'
+        }
+    ]);
+
+    res.status(200).json({ message: 'success', purchases: result });
+});
+
+/**
+ * Get purchases within X days
+ */
+app.get('/recentPurchases', async (req, res) => {
+    const { id, days } = req.query;
+
+    console.log(`Recent purchases for: ${id}`);
+
+    const account = await accounts.findById(id);
+
+    if (!account) {
+        return res.status(400).json({ message: `Failed to find account with id ${id}` });
+    }
+
+    const unixdate = Date.now() - (days * ONE_DAY);
+
+    const result = await purchases.find({ account: id, date: { $gt: unixdate } }).lean().populate([
+        {
+            path: 'items',
+            select: 'name quantity price -_id'
+        },
+        {
+            path: 'receipt',
+            select: 'data size mode -_id'
+        }
+    ]);
+
+    res.status(200).json({ message: 'success', purchases: result });
 });
 
 app.listen(PORT, () => {
