@@ -4,9 +4,10 @@ const dotenv = require('dotenv');
 const express = require('express');
 const mongoose = require('mongoose');
 const { dbConnect } = require('@m/init_mongo.js');
-const { accounts } = require('@m/mongo_models.js');
+const { accounts, receipts, purchases, items, categories } = require('@m/mongo_models.js');
 const hash = require('./hash')
 const cors = require('cors');
+const dateConvert = require('./dateConvert.js');
 
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
@@ -90,7 +91,7 @@ app.post('/login', async (req, res) => {
  * Receipt upload
  */
 app.post('/receipt', async (req, res) => {
-    const { id, receipt } = req.body;
+    const { id, purchase } = req.body;
 
     console.log(`Receipt upload attempt with id: ${id}`);
 
@@ -102,7 +103,34 @@ app.post('/receipt', async (req, res) => {
         return res.status(400).json({ message: 'No receipt data provided' });
     }
     
-    const purchase = {};
+    const { Date, Time, Merchant, Location, Items, Category, Subcategory, Total, Tax, Other } = purchase.receipt;
+    const new_purchase = {};
+    const receipt = await new receipts({
+        data: purchase.imageBytes,
+        size: purchase.imageSize,
+        mode: purchase.imageMode
+    }).save();
+    new_purchase.date = dateConvert(Date, Time);
+    new_purchase.merchant = Merchant;
+    new_purchase.location = Location;
+    new_purchase.tax = Tax;
+    new_purchase.total = Total;
+    new_purchase.receipt = receipt._id; // Can just set to the object, but this is more explicit
+    new_purchase.account = id;
+    new_purchase.items = [];
+    const { _id } = await new purchases(new_purchase).save();
+    for (const item of Items) {
+        const category = await categories.findOne({ name: item.category });
+        const new_item = await new items({
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price,
+            category: item.category,
+            purchase: _id
+        }).save();
+        new_purchase.items.push(new_item._id);
+    }
+
     // await account.save();
 
     console.log(`Receipt uploaded for account: ${id}`);

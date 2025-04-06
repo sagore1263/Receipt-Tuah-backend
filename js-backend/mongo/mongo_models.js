@@ -1,6 +1,4 @@
 const mongoose = require('mongoose');
-const stringDefault = 'NULL_STRING';
-const defaultDate = new Date('1970-01-01T00:00:00Z'); // Default date value
 const defaultNumber = 0;
 // Account
 const accountSchema = new mongoose.Schema({
@@ -22,7 +20,10 @@ const accountSchema = new mongoose.Schema({
 // Purchase
 const purchaseSchema = new mongoose.Schema({
     account: { type: mongoose.Schema.Types.ObjectId, ref: 'Account', default: null },
-    date: { type: Date, default: defaultDate },
+    merchant: { type: String, default: null },
+    location: { type: String, default: null },
+    tax: { type: Number, default: defaultNumber },
+    date: { type: Date, default: null },
     total: { type: Number, default: defaultNumber },
     items: { type: [mongoose.Schema.Types.ObjectId], ref: 'Item', default: () => [] },
     receipt: { type: mongoose.Schema.Types.ObjectId, ref: 'Receipt', default: null }, // Buffer for image data
@@ -40,6 +41,7 @@ const itemSchema = new mongoose.Schema({
     purchase: { type: mongoose.Schema.Types.ObjectId, ref: 'Purchase', default: null },
     name: { type: String, default: null },
     quantity: { type: Number, default: defaultNumber },
+    category: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', default: null },
     price: { type: Number, default: defaultNumber },
 }, { strict: false });
 
