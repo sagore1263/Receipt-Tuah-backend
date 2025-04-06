@@ -97,7 +97,7 @@ app.post('/login', async (req, res) => {
 app.post('/receipt', async (req, res) => {
     const { id, purchase } = req.body;
 
-    console.log(`Receipt upload attempt with id: ${id}`);
+    console.log(`Receipt upload attempt with id: ${id}\nReceipt data: ${JSON.stringify(purchase.receipt, null, 4)}`);
 
     const account = await accounts.findById(id);
 
@@ -362,7 +362,9 @@ app.get('/itemsByCategory', async (req, res) => {
         { $unwind: '$category' },
         { $match: { 'category.name': category, 'category.account': id } }
     ]);
-    // result = await result.populate();
+    // result = await result.populate({
+
+    // });
 
     res.status(200).json({ message: 'success', items: result });
 });
