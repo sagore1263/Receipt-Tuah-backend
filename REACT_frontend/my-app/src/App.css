@@ -800,3 +800,48 @@ body {
   background-color: #4da6ff;
   color: white;
 }
+
+/* Receipt Images Styling */
+.receipt-images-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.receipt-image-wrapper {
+  position: relative;
+  width: 200px; /* Adjust based on your design */
+  height: 300px; /* Adjust based on your design */
+}
+
+.receipt-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.remove-image-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  background-color: rgba(255, 0, 0, 0.7);
+  color: white;
+  border: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  font-size: 12px;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.remove-image-btn:hover {
+  opacity: 1;
+  background-color: rgba(255, 0, 0, 0.9);
+}

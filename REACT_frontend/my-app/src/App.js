@@ -464,6 +464,13 @@ const CategoryPieChart = () => {
     e.target.value = null; // Reset input
   };
 
+  const removeReceipt = (index) => {
+    // Create a new array without the removed image
+    const updatedImages = [...images];
+    updatedImages.splice(index, 1);
+    setImages(updatedImages);
+  };
+
   const handleLogin = (email, accountId) => {
     sessionStorage.setItem('isAuthenticated', 'true');
     sessionStorage.setItem('email', email);
@@ -679,15 +686,21 @@ const CategoriesTab = () => (
           <label htmlFor="upload-input" className="upload-button">
             Upload image
           </label>
-          <div className="image-preview-container">
+          <div className="receipt-images-container">
             {images.map((image, index) => (
-              <div key={index} className="image-preview">
+              <div className="receipt-image-wrapper" key={index}>
                 <img 
-                  src={image.url} 
-                  alt={image.name}
-                  className="preview-image"
+                  src={image.src || image} 
+                  alt={`Receipt ${index}`} 
+                  className="receipt-image" 
                 />
-                <p>{image.name}</p>
+                <button 
+                  className="remove-image-btn" 
+                  onClick={() => removeReceipt(index)}
+                  aria-label="Remove receipt"
+                >
+                  ✕
+                </button>
               </div>
             ))}
           </div>
