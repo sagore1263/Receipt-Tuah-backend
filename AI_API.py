@@ -121,7 +121,7 @@ async def convert_image_to_text(path):
 dict_prompt = """Convert this receipt text into a dictionary. Use the following format - 
 Date : (DD/MM/YYYY), Time : (HH:MM), Merchant : (merchant), Location : (location), Items : [{name : (ex : burger, onion, etc.), quantity : (int - optional), price : ($), Category : (see below), SubCategory : (see below)}] , Total : (total), Tax : (tax), Other : {json}
 If some of the fields are not available, just leave them blank. Put any field not listed in the "Other" field. If there are no items create an item with the same name as the merchant and add price and category.
-Just output the dictionary and nothing else.
+For Item names, do not be too specific because I want to group them together. For example red onions and sweet onions should be onions. Just output the dictionary and nothing else. 
 
 List of categories and subcateogries:
 Food: Groceries, Restaurants, Fast Food, Alcohol, Delivery

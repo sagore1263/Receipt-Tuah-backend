@@ -78,7 +78,7 @@ async def ai_image_to_text(path: str):
     result = await ai.receipt_to_dict(text)
     result = sf.clean_and_parse_json_string(response_text=result)
     return json.loads(result)
-@app.post("/upload-image/")
+@app.post("/upload-image")
 async def upload_image(file: UploadFile = File(...)):
     contents = await file.read()
     image = Image.open(io.BytesIO(contents))
@@ -158,15 +158,21 @@ async def page_view(cat: str, date: str):
     for item in data["items"]:
         prices_graph.append({"price": item["price"]})
 
+    counts = {{}}
+    for item in data["items"]:
+        counts[item["name"]] = {"price": counts.get(item["name"], 0) + item["price"], "quantity": counts.get(item["name"], 0) + item["quantity"]}
+
     get_screen_view({"list": data["items"], 
             "total": data["total"], 
             "average": data["average"], 
-            "prices_graph": prices_graph})
+            "prices_graph": prices_graph,
+            "statistics": counts})
 
     return {"list": data["items"], 
             "total": data["total"], 
             "average": data["average"], 
-            "prices_graph": prices_graph}
+            "prices_graph": prices_graph,
+            "statistics": counts}
 @app.get("/get-recent-receipts")
 async def get_recent_receipts():
     if not id_user or id_user == "":
