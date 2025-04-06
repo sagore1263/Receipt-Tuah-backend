@@ -1,31 +1,46 @@
 // App.js
 import { useState, useEffect } from 'react';
 import './App.css';
-import { a } from 'framer-motion/client';
 import ChatAssistant from './ChatAssistant';
+import { login, signup } from './AuthService';
+
 const Login = ({ onLogin }) => {
+  const [isLogin, setIsLogin] = useState(true);
   const [credentials, setCredentials] = useState({
-    username: '',
+    email: '',
     password: ''
   });
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (credentials.username && credentials.password) {
-      onLogin(credentials.username); // Pass username to parent
+    try {
+      const authFunction = isLogin ? login : signup;
+      const response = await authFunction(credentials.email, credentials.password);
+      
+      // Store the received token and email
+      sessionStorage.setItem('token', response.token);
+      sessionStorage.setItem('email', credentials.email); // Use the email from form
+      
+      // Pass the email to onLogin
+      onLogin(credentials.email);
+    } catch (err) {
+      setError(err.message);
     }
   };
 
   return (
     <div className="login-container">
       <form onSubmit={handleSubmit} className="login-form">
-        <h2>Login</h2>
+        <h2>{isLogin ? 'Login' : 'Sign Up'}</h2>
+        {error && <div className="error-message">{error}</div>}
         <div className="form-group">
-          <label>Username:</label>
+          <label>Email:</label>
           <input
-            type="text"
-            value={credentials.username}
-            onChange={(e) => setCredentials({ ...credentials, username: e.target.value })}
+            type="email"
+            value={credentials.email}
+            onChange={(e) => setCredentials({ ...credentials, email: e.target.value })}
+            required
           />
         </div>
         <div className="form-group">
@@ -34,16 +49,23 @@ const Login = ({ onLogin }) => {
             type="password"
             value={credentials.password}
             onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
+            required
           />
         </div>
         <button type="submit" className="login-button">
-          Login
+          {isLogin ? 'Login' : 'Create Account'}
+        </button>
+        <button
+          type="button"
+          className="toggle-button"
+          onClick={() => setIsLogin(!isLogin)}
+        >
+          {isLogin ? 'Create new account' : 'Already have an account?'}
         </button>
       </form>
     </div>
   );
 };
-
 const App = () => {
   const [activeTab, setActiveTab] = useState('Home');
   const [images, setImages] = useState([]);
@@ -54,6 +76,7 @@ const App = () => {
     const authStatus = sessionStorage.getItem('isAuthenticated');
     if (authStatus === 'true') {
       setIsAuthenticated(true);
+      setActiveTab('Home');
     }
     const storedUsername = sessionStorage.getItem('username');
     if (authStatus === 'true' && storedUsername) {
@@ -67,40 +90,67 @@ const App = () => {
     }
   }, []);
 
-  const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
-    const newImagesPromises = files.map(file => {
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          resolve({
-            name: file.name,
-            url: reader.result,
-            size: file.size,
-            type: file.type,
-            lastModified: file.lastModified,
-          });
-        };
-        reader.readAsDataURL(file);
-      });
+  // Update the handleFileChange function in App.js
+const handleFileChange = (e) => {
+  const files = Array.from(e.target.files);
+  
+  // Process files for preview
+  const newImagesPromises = files.map(file => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        resolve({
+          name: file.name,
+          url: reader.result,
+          size: file.size,
+          type: file.type,
+          lastModified: file.lastModified,
+        });
+      };
+      reader.readAsDataURL(file);
     });
+  });
 
-    Promise.all(newImagesPromises).then(newImages => {
-      setImages(prev => {
-        const updatedImages = [...prev, ...newImages];
-        localStorage.setItem('images', JSON.stringify(updatedImages));
-        return updatedImages;
-      });
-      e.target.value = null;
+  Promise.all(newImagesPromises).then(newImages => {
+    setImages(prev => {
+      const updatedImages = [...prev, ...newImages];
+      localStorage.setItem('images', JSON.stringify(updatedImages));
+      return updatedImages;
     });
-  };
+    e.target.value = null;
 
-   // Update login handler
-   const handleLogin = (username) => {
+    // Upload files to backend
+    files.forEach(file => {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("email", username); // username is the logged-in email
+
+      fetch('http://localhost:8000/upload-image', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Authorization': `Bearer ${sessionStorage.getItem('token')}`
+        }
+      })
+      .then(response => {
+        if (!response.ok) throw new Error('Upload failed');
+        const yur = response.json();
+        console.log(yur)
+        return yur;
+      })
+      .then(data => console.log('Upload success:', data))
+      .catch(error => console.error('Upload error:', error));
+    });
+  });
+};
+
+   // Update the handleLogin function in App component
+   const handleLogin = (email) => {
     sessionStorage.setItem('isAuthenticated', 'true');
-    sessionStorage.setItem('username', username);
+    sessionStorage.setItem('email', email);
     setIsAuthenticated(true);
-    setUsername(username);
+    setUsername(email); // Set username to email
+    setActiveTab('Home');
   };
 
   const handleLogout = () => {
@@ -129,43 +179,48 @@ const App = () => {
   const TabContent = ({ children }) => (
     <div className="content-area">
       <div className="header-row">
-        <h2>{children}</h2>
-          <p>Welcome, {username}</p>
+        <div className="user-greeting">
+          <h2>{children}</h2>
+        </div>
         <button onClick={handleLogout} className="logout-button">
           Logout
         </button>
       </div>
-      <div className="upload-section">
-        <input
-          type="file"
-          id="upload-input"
-          style={{ display: 'none' }}
-          onChange={handleFileChange}
-          accept="image/*"
-          multiple
-        />
-        <label htmlFor="upload-input" className="upload-button">
-          Upload image
-        </label>
-        <div className="image-preview-container">
-          {images.map((image, index) => (
-            <div key={index} className="image-preview">
-              <img 
-                src={image.url} 
-                alt={image.name}
-                className="preview-image"
-              />
-               <button 
-              className="delete-image-btn"
-              onClick={() => handleDeleteImage(index)}
-            >
-              x
-            </button>
-              <p>{image.name}</p>
-            </div>
-          ))}
+      
+      {/* Show upload section only on Home tab */}
+      {activeTab === 'Home' && (
+        <div className="upload-section">
+          <input
+            type="file"
+            id="upload-input"
+            style={{ display: 'none' }}
+            onChange={handleFileChange}
+            accept="image/*"
+            multiple
+          />
+          <label htmlFor="upload-input" className="upload-button">
+            Upload image
+          </label>
+          <div className="image-preview-container">
+            {images.map((image, index) => (
+              <div key={index} className="image-preview">
+                <img 
+                  src={image.url} 
+                  alt={image.name}
+                  className="preview-image"
+                />
+                <button 
+                  className="delete-image-btn"
+                  onClick={() => handleDeleteImage(index)}
+                >
+                  ×
+                </button>
+                <p>{image.name}</p>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 
