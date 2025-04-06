@@ -11,3 +11,5 @@ const models = require('@m/mongo_models.js');
         });
     });
 // })();
+
+process.exit(0);

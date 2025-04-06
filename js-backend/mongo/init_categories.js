@@ -54,7 +54,7 @@ async function initCategories(accountId) {
         const existingNames = new Set(existingSubcategories.map(s => s.name));
 
         // Filter for new subcategories
-        console.log(i);
+        // console.log(i);
         const newSubcategories = subcategoryArr[i].filter(
             name => !existingNames.has(name)
         );
