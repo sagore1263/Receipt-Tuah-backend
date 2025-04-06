@@ -16,13 +16,28 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+global enable_search
+enable_search = False 
+
 @app.get("/")
 def home_view():
     return "Hello world"
 
+@app.get("/enable-search")
+def enable_search_view():
+    global enable_search
+    enable_search = True
+    return "Search enabled"
+
+@app.get("/disable-search")
+def disable_search_view():
+    global enable_search
+    enable_search = False
+    return "Search disabled"
+
 @app.get("/ai")
 async def ai_speak(subject: str):
-    return await ai.generate_response(subject)
+    return await ai.generate_response(subject, enable_search)
 
 @app.get("/ai-old")
 async def ai_view():
