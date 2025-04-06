@@ -32,7 +32,7 @@ const purchaseSchema = new mongoose.Schema({
 
 // Receipt
 const receiptSchema = new mongoose.Schema({
-    data: { type: Buffer, required: true }, // Buffer for image data
+    data: { type: mongoose.Schema.Types.Buffer, required: true }, // Buffer for image data
     mimeType: { type: String, required: true }, // MIME type of the image (e.g., 'image/jpeg')
 });
 

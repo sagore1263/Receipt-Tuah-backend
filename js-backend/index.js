@@ -186,23 +186,23 @@ app.get('/userdata', async (req, res) => {
     const { settings, data } = await account.populate([
         {
             path: 'data.purchases',
-            select: '-account -_id',
+            select: '-account -__v',
             populate: purchasePopulate
         },
         {
             path: 'data.categories',
-            select: '-account -_id',
+            select: '-account -__v',
             populate: [
                 {
                     path: 'items',
-                    select: 'name quantity price -_id'
+                    select: 'name purchase quantity price -__v'
                 },
                 {
                     path: 'subcategories',
                     select: 'name items',
                     populate: {
                         path: 'items',
-                        select: 'name quantity price -_id'
+                        select: 'name purchase quantity price -__v'
                     }
                 }
             ]
@@ -342,7 +342,7 @@ app.get('/itemsByCategory', async (req, res) => {
     console.log(`Purchases by category for: ${id}`);
 
     const account = await accounts.findById(id);
-    const categoryDoc = await categories.findOne({ name: category });
+    const categoryDoc = await categories.findOne({ account: id, name: category });
 
     if (!account) {
         return res.status(400).json({ message: `Failed to find account with id ${id}` });
@@ -350,21 +350,10 @@ app.get('/itemsByCategory', async (req, res) => {
         return res.status(400).json({ message: `Category ${category} does not exist` });
     }
 
-    let result = await items.aggregate([
-        {
-          $lookup: {
-            from: 'categories',
-            localField: 'category',
-            foreignField: '_id',
-            as: 'category'
-          }
-        },
-        { $unwind: '$category' },
-        { $match: { 'category.name': category, 'category.account': id } }
-    ]);
-    // result = await result.populate({
-
-    // });
+    const result = await categoryDoc.populate({
+        path: 'items',
+        select: 'name quantity price -_id',
+    });
 
     res.status(200).json({ message: 'success', items: result });
 });
