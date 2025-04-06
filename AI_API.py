@@ -8,6 +8,10 @@ from google.genai import types
 
 from google.genai.types import Tool, GenerateContentConfig, GoogleSearch
 
+import base64
+import io
+import base64
+import io
 load_dotenv()
 
 global model
@@ -61,9 +65,22 @@ async def convert_image_to_text(path):
         contents=["Convert this to text", image])
     return response.text
 dict_prompt = """Convert this receipt text into a dictionary. Use the following format - 
-Date : (DD/MM/YYYY), Time : (time), Merchant : (merchant), Location : (location), Items : [{name : (ex : burger, onion, etc.), quantity : (quantity), price : (price)}], Category :(ex : food, entertainment, home, etc.), Subcategory : (ex : lunch, dinner, furniture, etc.), Total : (total), Tax : (tax), Other : {json}
+Date : (DD/MM/YYYY), Time : (HH:MM), Merchant : (merchant), Location : (location), Items : [{name : (ex : burger, onion, etc.), quantity : (int - optional), price : ($), Category : (see below), Sub-Category : (see below)}] , Total : (total), Tax : (tax), Other : {json}
 If some of the fields are not available, just leave them blank. Put any field not listed in the "Other" field.
-Just output the dictionary and nothing else."""
+Just output the dictionary and nothing else.
+
+List of categories and subcateogries:
+Food: Groceries, Restaurants, Fast Food, Alcohol, Delivery, Other
+Housing: Rent/Mortgage, Electricity, Internet, Other 
+Transportation: Fuel, Public Transit, Taxi
+Shopping: Clothing, Electronics, Furniture, Other
+Entertainment: Streaming, Events, Video Games, Movies, Subscriptions
+Financial: Income, Credit Card Payments
+Personal Care: Haircuts, Skincare & Makeup, Hygiene Products, Spa & Massage
+Miscellaneous: Uncategorized, Cash Withdrawal, Other
+"""
+
+
 async def receipt_to_dict(text):
     global chat
     global model
@@ -71,6 +88,7 @@ async def receipt_to_dict(text):
     response = model.models.generate_content(
         model="gemini-2.0-flash",
         contents=[dict_prompt, text])
+    print(response.text)
     return response.text
 async def ai_image_to_dict(image):
     global chat
