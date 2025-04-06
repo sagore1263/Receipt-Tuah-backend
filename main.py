@@ -1,4 +1,4 @@
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
 import AI_API as ai
@@ -8,7 +8,7 @@ from PIL import Image
 import io
 import base64
 from dotenv import load_dotenv
-
+import mongo_API_calls as mAPI
 load_dotenv()
 app = FastAPI()
 
@@ -34,7 +34,7 @@ global enable_search
 enable_search = False
 
 global id_user 
-id_user= "67f21bb8b386c742b3e13a82"
+id_user= "67f2559d107040926e28ab6f"
 
 @app.get("/")
 def home_view():
@@ -92,6 +92,36 @@ async def upload_image(file: UploadFile = File(...)):
     encoded_image = base64.b64encode(contents).decode("utf-8")
     mime_type = Image.MIME.get(image.format, "image/png")  # fallback
     return {"receipt": receipt, "imageBytes" : encoded_image, "mimeType": mime_type}
+@app.get("/receipt-image")
+async def get_receipt_img(id : str):
+    if not id or id == "":
+        raise HTTPException(status_code=400, detail="Invalid Receipt ID")
+    receipt = await mAPI.get_receipt(id)
+    if not receipt:
+        raise HTTPException(status_code=404, detail="No receipt found")
+    return {"image": receipt['data'], "mime_type": receipt['mime_type']}
+categories = [
+    "Food",
+    "Housing",
+    "Transportation",
+    "Shopping",
+    "Entertainment",
+    "Personal Care",
+    "Miscellaneous"
+]
+@app.get("/category-pie-chart")
+async def get_category_pie_chart(id: str):
+    if not id or id == "":
+        raise HTTPException(status_code=400, detail="Invalid User ID")
+    data = {}
+    for category in categories:
+        items = await mAPI.get_category_items(id, category)
+        if items['total'] > 0:
+            data[category] = items['total']
+    return data
+        
+
+    
 
 if __name__ == "__main__":
     import uvicorn

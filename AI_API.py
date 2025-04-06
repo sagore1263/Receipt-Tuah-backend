@@ -74,7 +74,7 @@ async def generate_response(prompt, id_user, enable_search = False):
     global chat
     global model
     if (not has_context and id_user) :
-        await set_user_context(id_user)
+        print(await set_user_context(id_user))
     if enable_search:
         response = await chat.send_message(prompt, 
             config=types.GenerateContentConfig(
@@ -107,7 +107,7 @@ async def convert_image_to_text(path):
         contents=["Convert this to text", image])
     return response.text
 dict_prompt = """Convert this receipt text into a dictionary. Use the following format - 
-Date : (DD/MM/YYYY), Time : (HH:MM), Merchant : (merchant), Location : (location), Items : [{name : (ex : burger, onion, etc.), quantity : (int - optional), price : ($), Category : (see below), Sub-Category : (see below)}] , Total : (total), Tax : (tax), Other : {json}
+Date : (DD/MM/YYYY), Time : (HH:MM), Merchant : (merchant), Location : (location), Items : [{name : (ex : burger, onion, etc.), quantity : (int - optional), price : ($), Category : (see below), SubCategory : (see below)}] , Total : (total), Tax : (tax), Other : {json}
 If some of the fields are not available, just leave them blank. Put any field not listed in the "Other" field. If there are no items create an item with the same name as the merchant and add price and category.
 Just output the dictionary and nothing else.
 

@@ -1,8 +1,30 @@
 import requests
+import mongo_API_calls as mAPI
+import asyncio
+import json
 
 # Replace with your actual server URL and port
 url = "http://127.0.0.1:8000/upload-image/"
 
+categories = [
+    "Food",
+    "Housing",
+    "Transportation",
+    "Shopping",
+    "Entertainment",
+    "Personal Care",
+    "Miscellaneous"
+]
+async def stuff():
+    for category in categories:
+        print(f"Category: {category}")
+        items = await mAPI.get_category_items("67f2559d107040926e28ab6f", category)
+        for item in items['items']:
+            print(f"Item: {item['name']}, Price: {item['price']}, subCategory: {item['subcategory']['name']}")
+        else:
+            print("No items found.")
+    exit()
+asyncio.run(stuff())
 # Path to your test image
 image_path = "receipts/lepeep.jpg"
 
