@@ -4,6 +4,7 @@ import os
 import json
 import str_format as sf
 from PIL import Image
+from google.genai import types
 
 from google.genai.types import Tool, GenerateContentConfig, GoogleSearch
 
@@ -28,7 +29,15 @@ async def generate_response(prompt, enable_search = False):
     global chat
     global model
 
-    response = await chat.send_message(prompt)
+    if enable_search:
+        response = await chat.send_message(prompt, 
+            config=types.GenerateContentConfig(
+            tools=[types.Tool(
+                google_search=types.GoogleSearchRetrieval
+            )])
+        )
+    else:
+        response = await chat.send_message(prompt)
     return response.text
 
 async def generate_image_summary():
