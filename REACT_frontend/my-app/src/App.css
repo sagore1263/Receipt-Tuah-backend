@@ -813,3 +813,23 @@
   padding: 8px 0;
   border-bottom: 1px solid #eee;
 }
+.loading-message, .no-data-message, .error-message {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+}
+
+.error-message {
+  color: #dc3545;
+}
+
+.loading-message::after {
+  content: '...';
+  animation: dots 1s infinite;
+}
+
+@keyframes dots {
+  0%, 20% { content: '.'; }
+  40% { content: '..'; }
+  60%, 100% { content: '...'; }
+}
