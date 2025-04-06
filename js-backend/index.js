@@ -484,6 +484,47 @@ app.get('/getPurchases', async (req, res) => {
     res.status(200).json({ message: 'success', purchases: result, number: num, sortedBy: type, direction: ascending ? 'ascending' : 'descending', total: total, average: total / num });
 });
 
+/**
+ * Set account settings
+ */
+app.post('/setSettings', async (req, res) => {
+    const { id, settings } = req.body;
+
+    console.log(`Settings update for account: ${id}`);
+
+    if (!settings.location || !(settings.useLocation === false || settings.useLocation === true)) {
+        return res.status(400).json({ message: 'Location settings are required' });
+    }
+
+    const account = await accounts.findById(id);
+
+    if (!account) {
+        return res.status(400).json({ message: `Failed to find account with id ${id}` });
+    }
+
+    account.settings = settings;
+    await account.save();
+
+    res.status(200).json({ message: 'success', settings: settings });
+});
+
+/**
+ * Get account settings
+ */
+app.get('/settings', async (req, res) => {
+    const { id } = req.query;
+    
+    const account = await accounts.findById(id);
+
+    if (!account) {
+        return res.status(400).json({ message: `Failed to find account with id ${id}` });
+    }
+
+    const settings = account.settings;
+
+    res.status(200).json({ message: 'success', settings: settings });
+});
+
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
