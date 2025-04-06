@@ -264,7 +264,11 @@ app.get('/purchasesBeforeDate', async (req, res) => {
 
     const result = await purchases.find({ account: id, date: { $lt: unixdate } }).lean().populate(image ? purchasePopulateImage : purchasePopulate);
 
-    res.status(200).json({ message: 'success', purchases: result });
+    const total = result.reduce((acc, purchase) => {
+        return acc + purchase.total;
+    }, 0);
+
+    res.status(200).json({ message: 'success', purchases: result, total: total });
 });
 /**
  * Get purchases between 2 dates, inclusive
@@ -282,6 +286,8 @@ app.get('/purchasesBetweenDates', async (req, res) => {
         return res.status(400).json({ message: `Invalid date param(s): ${date1}, ${date2}` });
     }
 
+    const days = Math.floor((unixdate2 - unixdate1) / ONE_DAY);
+
     const account = await accounts.findById(id);
 
     if (!account) {
@@ -290,7 +296,11 @@ app.get('/purchasesBetweenDates', async (req, res) => {
 
     const result = await purchases.find({ account: id, date: { $gt: unixdate1, $lt: unixdate2 } }).lean().populate(image ? purchasePopulateImage : purchasePopulate);
 
-    res.status(200).json({ message: 'success', purchases: result });
+    const total = result.reduce((acc, purchase) => {
+        return acc + purchase.total;
+    }, 0);
+
+    res.status(200).json({ message: 'success', purchases: result, total: total, average: total / days });
 });
 /**
  * Get purchases after date, exclusive
@@ -314,8 +324,12 @@ app.get('/purchasesAfterDate', async (req, res) => {
     }
 
     const result = await purchases.find({ account: id, date: { $gt: unixdate } }).lean().populate(image ? purchasePopulateImage : purchasePopulate);
+    
+    const total = result.reduce((acc, purchase) => {
+        return acc + purchase.total;
+    }, 0);
 
-    res.status(200).json({ message: 'success', purchases: result });
+    res.status(200).json({ message: 'success', purchases: result, total: total });
 });
 
 /**
@@ -340,7 +354,11 @@ app.get('/recentPurchases', async (req, res) => {
 
     const result = await purchases.find({ account: id, date: { $gt: unixdate } }).lean().populate(image ? purchasePopulateImage : purchasePopulate);
 
-    res.status(200).json({ message: 'success', purchases: result });
+    const total = result.reduce((acc, purchase) => {
+        return acc + purchase.total;
+    }, 0);
+
+    res.status(200).json({ message: 'success', purchases: result, total: total, average: total / days });
 });
 
 /**
@@ -369,11 +387,11 @@ app.get('/itemsByCategory', async (req, res) => {
         }
     }).lean();
 
-    const total = result.items.reduce((acc, item) => {
-        return acc + item.price;
-    }, 0);
+    const [total, quantity] = result.items.reduce(([acct, accq], item) => {
+        return [acct + item.price, accq + item.quantity];
+    }, [0, 0]);
 
-    res.status(200).json({ message: 'success', items: result.items, total: total, average: total / result.items.length });
+    res.status(200).json({ message: 'success', items: result.items, total: total, average: total / quantity });
 });
 
 /**
@@ -398,11 +416,39 @@ app.get('/itemsBySubcategory', async (req, res) => {
         select: 'name quantity purchase price -_id',
     }).lean();
 
-    const total = result.items.reduce((acc, item) => {
-        return acc + item.price;
+    const [total, quantity] = result.items.reduce(([acct, accq], item) => {
+        return [acct + item.price, accq + item.quantity];
+    }, [0, 0]);
+
+    res.status(200).json({ message: 'success', items: result.items, total: total, average: total / quantity });
+});
+
+/**
+ * Get X purchases sorted by date or total
+ */
+app.get('/getPurchases', async (req, res) => {
+    const { id, num, order, type, image } = req.query;
+
+    if (type !== 'date' && type !== 'total') {
+        return res.status(400).json({ message: `Invalid type param: ${type}. Must be "date" or "total"` });
+    }
+    const ascending = order === 'up';
+    const sort = {[type]: ascending ? 1 : -1};
+
+    const account = await accounts.findById(id);
+
+    if (!account) {
+        return res.status(400).json({ message: `Failed to find account with id ${id}` });
+    }
+
+    const result = await purchases.find({ account: id }).sort(sort).lean().populate(image ? purchasePopulateImage : purchasePopulate);
+
+    if (result.length > num) result.length = num;
+    const total = result.reduce((acc, purchase) => {
+        return acc + purchase.total;
     }, 0);
 
-    res.status(200).json({ message: 'success', items: result.items, total: total, average: total / result.items.length });
+    res.status(200).json({ message: 'success', purchases: result, number: num, sortedBy: type, direction: ascending ? 'ascending' : 'descending', total: total, average: total / num });
 });
 
 app.listen(PORT, () => {
