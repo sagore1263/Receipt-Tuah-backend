@@ -5,9 +5,10 @@ const defaultNumber = 0;
 // Account
 const accountSchema = new mongoose.Schema({
     email: { type: String, default: null },
-    username: { type: String, default: null },
+    // username: { type: String, default: null },
     password: { type: String, default: null },
-    auth_token: { type: String, default: null },
+    // auth_token: { type: String, default: null },
+    settings: Schema.Types.Mixed,
     data: {
         type: {
             purchases: { type: [mongoose.Schema.Types.ObjectId], ref: 'Purchase', required: true },
@@ -30,6 +31,8 @@ const purchaseSchema = new mongoose.Schema({
 // Receipt
 const receiptSchema = new mongoose.Schema({
     data: { type: Buffer, default: null },
+    size: { type: Number, default: defaultNumber },
+    mode: { type: String, default: null },
 });
 
 // Item
@@ -42,6 +45,13 @@ const itemSchema = new mongoose.Schema({
 
 // Category
 const categorySchema = new mongoose.Schema({
+    account: { type: mongoose.Schema.Types.ObjectId, ref: 'Account', default: null },
+    items: { type: [mongoose.Schema.Types.ObjectId], ref: 'Item', default: () => [] },
+    subcategories: { type: [mongoose.Schema.Types.ObjectId], ref: 'Subcategory', default: () => [] },
+    name: { type: String, default: null },
+}, { strict: false });
+
+const subcategorySchema = new mongoose.Schema({
     account: { type: mongoose.Schema.Types.ObjectId, ref: 'Account', default: null },
     items: { type: [mongoose.Schema.Types.ObjectId], ref: 'Item', default: () => [] },
     name: { type: String, default: null },

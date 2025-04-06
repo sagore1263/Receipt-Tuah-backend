@@ -26,6 +26,10 @@ app.use(cors({
   }));
 app.use(express.json());
 
+/**
+ * Utility
+ */
+
 app.get('/', async (req, res) => {
     res.json({ message: 'Welcome to the Express API!' });
 });
@@ -36,6 +40,10 @@ app.post('/data', async (req, res) => {
   
     res.status(200).json({ message: 'JSON received successfully', data: receivedData });
 });
+
+/**
+ * User auth
+ */
 
 app.post('/signup', async (req, res) => {
     const { email, password } = req.body;
@@ -54,10 +62,10 @@ app.post('/signup', async (req, res) => {
         password: hash(password),
     });
 
-    await account.save();
-    console.log('Account created: ', email);
+    const { _id } = await account.save();
+    console.log(`Account created: Email: ${email}, id: ${_id}`);
 
-    return res.status(200).json({ message: 'Signup successful', email });
+    return res.status(200).json({ message: 'success', email: email, accountId: _id });
 });
 
 app.post('/login', async (req, res) => {
@@ -75,29 +83,60 @@ app.post('/login', async (req, res) => {
         return res.status(400).json({ message: 'Incorrect password' });
     }
 
-    res.status(200).json({ message: 'Login successful', email: email, accountId: account._id });
+    res.status(200).json({ message: 'success', email: email, accountId: account._id });
 });
 
+/**
+ * Receipt upload
+ */
 app.post('/receipt', async (req, res) => {
-    const { email, receipt } = req.body;
-    // Perform login logic here
-    console.log(`Receipt upload attempt with id: ${email}`);
+    const { id, receipt } = req.body;
 
-    const account = await accounts.findOne({ email: email });
+    console.log(`Receipt upload attempt with id: ${id}`);
+
+    const account = await accounts.findById(id);
 
     if (!account) {
-        return res.status(400).json({ message: 'Account does not exist with this email' });
-    }
-
-    if (receipt) {
-        account.data.receipt = receipt;
-        await account.save();
-        console.log('Receipt uploaded for account: ', email);
-    } else {
+        return res.status(400).json({ message: `Failed to find account with id ${id}` });
+    } else if (!receipt) {
         return res.status(400).json({ message: 'No receipt data provided' });
     }
+    
+    const purchase = {};
+    // await account.save();
 
-    res.status(200).json({ message: 'Receipt upload successful', email });
+    console.log(`Receipt uploaded for account: ${id}`);
+    res.status(200).json({ message: 'success', accountId: account._id });
+});
+
+app.get('/userdata', async (req, res) => {
+    const { id } = req.query;
+
+    console.log(`User data request for id: ${id}`);
+
+    const account = await accounts.findById(id);
+
+    if (!account) {
+        return res.status(400).json({ message: `Failed to find account with id ${id}` });
+    }
+
+    const { settings, data } = account.populate({
+        path: 'data.purchases',
+        select: 'total date items receipt',
+        populate: {
+            path: 'items',
+            select: 'name quantity price'
+        }
+    }).popualte({
+        path: 'data.categories',
+        select: 'name items subcategories',
+        populate: {
+            path: 'items',
+            select: 'name quantity price'
+        }
+    }).select('settings data');
+    console.log(`User data retrieved for account: ${id}`);
+    res.status(200).json({ message: 'success', settings: settings, data: data });
 });
 
 app.listen(PORT, () => {
