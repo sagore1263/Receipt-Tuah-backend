@@ -135,16 +135,15 @@ const sampleCategoryData = [
     if (savedImages) setImages(JSON.parse(savedImages));
   }, []);
 
-  const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
-    
+  const processFiles = (files) => {
     // Process files for preview
     const newImagesPromises = files.map(file => {
       return new Promise((resolve) => {
         const reader = new FileReader();
         reader.onloadend = () => {
           resolve({
-            name: file.name,
+            id: Date.now() + Math.random(), // Add unique ID
+            name: file.name || `Camera_${new Date().toLocaleString()}`,
             url: reader.result,
             size: file.size,
             type: file.type,
@@ -154,21 +153,21 @@ const sampleCategoryData = [
         reader.readAsDataURL(file);
       });
     });
-
+  
     Promise.all(newImagesPromises).then(newImages => {
       setImages(prev => {
         const updatedImages = [...prev, ...newImages];
         localStorage.setItem('images', JSON.stringify(updatedImages));
         return updatedImages;
       });
-      e.target.value = null;
-
+  
       // Upload files and store receipts
-      files.forEach(file => {
+      newImages.forEach((image, index) => {
+        const file = files[index];
         const formData = new FormData();
         formData.append("file", file);
         formData.append("email", username);
-
+  
         fetch('http://localhost:8000/upload-image', {
           method: 'POST',
           body: formData,
@@ -181,23 +180,21 @@ const sampleCategoryData = [
           return response.json();
         })
         .then(receiptData => {
-          console.log('Upload success:', receiptData);
-          setReceipts(prev => [...prev, receiptData]);
-          const accountId = sessionStorage.getItem('accountId');
-          return fetch('http://localhost:3001/receipt', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            id: accountId,
-            purchase: receiptData
-          })
-        });
+          // Update receipts state with image ID mapping
+          setReceipts(prev => ({
+            ...prev,
+            [image.id]: receiptData // Store receipt data by image ID
+          }));
         })
         .catch(error => console.error('Upload error:', error));
       });
     });
+  };
+
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    processFiles(files);
+    e.target.value = null; // Reset input
   };
 
   const handleLogin = (email, accountId) => {
@@ -207,6 +204,13 @@ const sampleCategoryData = [
     setIsAuthenticated(true);
     setUsername(email);
     setActiveTab('Home');
+    fetch(`http://localhost:8000/set-id?id=${accountId}`)
+    .then(response => {
+      if (!response.ok) throw new Error('ID setting failed');
+      return response.text();
+    })
+    .then(id => console.log('ID set to:', id))
+    .catch(error => console.error('ID setting error:', error));
   };
 
   const handleLogout = () => {
@@ -214,6 +218,7 @@ const sampleCategoryData = [
     setIsAuthenticated(false);
     setUsername('');
     setReceipts([]);
+    
   };
 
   const handleDeleteImage = (indexToDelete) => {
@@ -346,6 +351,7 @@ const sampleCategoryData = [
   
         {/* Upload Section */}
         <div className="upload-section">
+          {/* File upload button */}
           <input
             type="file"
             id="upload-input"
@@ -357,6 +363,7 @@ const sampleCategoryData = [
           <label htmlFor="upload-input" className="upload-button">
             Upload image
           </label>
+          
           <div className="image-preview-container">
             {images.map((image, index) => (
               <div key={index} className="image-preview">
@@ -372,12 +379,6 @@ const sampleCategoryData = [
                   ×
                 </button>
                 <p>{image.name}</p>
-                {receipts[index] && (
-                  <div className="receipt-info">
-                    <p>Total: ${receipts[index].Total}</p>
-                    <p>Merchant: {receipts[index].Merchant}</p>
-                  </div>
-                )}
               </div>
             ))}
           </div>
