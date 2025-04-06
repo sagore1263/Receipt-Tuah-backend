@@ -3,8 +3,6 @@ import './App.css';
 import ChatAssistant from './ChatAssistant';
 import { login, signup } from './AuthService';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import Webcam from 'react-webcam';
-import { useRef } from 'react';
 
 const Login = ({ onLogin }) => {
   const [isLogin, setIsLogin] = useState(true);
@@ -91,26 +89,6 @@ const [isLoading, setIsLoading] = useState(false);
 const [pageData, setPageData] = useState(null);
 const [pageLoading, setPageLoading] = useState(false);
 const [pageError, setPageError] = useState(null);
-const webRef = useRef(null);
-  const showImage = () => {
-    const file = webRef.current.getScreenshot();
-    console.log(file);
-
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("email", username);
-  
-        fetch('http://localhost:8000/upload-image', {
-          method: 'POST',
-          body: formData,
-          headers: {
-            'Authorization': `Bearer ${sessionStorage.getItem('token')}`
-          }
-        }).then(response => {
-          if (!response.ok) throw new Error('Upload failed');
-          return response.json();
-        }).catch(error => console.error('Upload error:', error));
-  };
 
 useEffect(() => {
   if (userId) {
@@ -168,7 +146,6 @@ useEffect(() => {
   // Create chart component
   const CategoryPieChart = () => (
     <div className="chart-container">
-      <h3>Spending by Category</h3>
       {chartLoading ? (
         <div className="loading-message">Loading chart data...</div>
       ) : chartError ? (
@@ -471,7 +448,7 @@ const CategoriesTab = () => (
   
         {/* Analytics Section */}
         <div className="analytics-section">
-          <h3>Spending Overview</h3>
+          <h3>Spending overview by category</h3>
           <div className="chart-container">
             <CategoryPieChart />
           </div>
@@ -542,8 +519,6 @@ const CategoriesTab = () => (
           <label htmlFor="upload-input" className="upload-button">
             Upload image
           </label>
-          <Webcam ref={webRef} />
-          <button onClick={() => {showImage();}} className="capture-button">Capture</button>
           <div className="image-preview-container">
             {images.map((image, index) => (
               <div key={index} className="image-preview">
