@@ -10,17 +10,29 @@ const initCategories = require('@m/init_categories.js');
 const app = express();
 const PORT = process.env.MONGO_PORT || 3001;
 
+const itemCategoryPop = [
+    {
+        path: 'category',
+        select: 'name -_id',
+    },
+    {
+        path: 'subcategory',
+        select: 'name -_id',
+    }
+];
 const purchasePopulate = [
     {
         path: 'items',
-        select: '-purchase -__v -_id'
+        select: '-purchase -__v -_id',
+        populate: itemCategoryPop
     }
 ];
 
 const purchasePopulateImage = [
     {
         path: 'items',
-        select: '-purchase -__v -_id'
+        select: '-purchase -__v -_id',
+        populate: itemCategoryPop
     },
     {
         path: 'receipt',
@@ -37,28 +49,11 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 
 /**
- * Utility
- */
-
-app.get('/', async (req, res) => {
-    res.json({ message: 'Welcome to the Express API!' });
-});
-
-app.post('/data', async (req, res) => {
-    const receivedData = req.body;
-    console.log('Received JSON:', receivedData);
-  
-    res.status(200).json({ message: 'JSON received successfully', data: receivedData });
-});
-
-/**
  * User auth
  */
 
 app.post('/signup', async (req, res) => {
     const { email, password } = req.body;
-    // Perform login logic here
-    console.log(`Login attempt with email: ${email} and password: ${password}`);
 
     const exists = !!await accounts.findOne({ email: email });
 
@@ -82,8 +77,6 @@ app.post('/signup', async (req, res) => {
 
 app.post('/login', async (req, res) => {
     const { email, password } = req.body;
-    // Perform login logic here
-    console.log(`Login attempt with email: ${email} and password: ${password}`);
 
     const account = await accounts.findOne({ email: email }).lean();
 
@@ -214,7 +207,7 @@ app.get('/userdata', async (req, res) => {
                 }
             ]
         }
-    ]).lean();
+    ]);
     const lifetimeTotal = data.purchases.reduce((acc, purchase) => {
         return acc + purchase.total;
     }, 0);
@@ -359,6 +352,43 @@ app.get('/recentPurchases', async (req, res) => {
     }, 0);
 
     res.status(200).json({ message: 'success', purchases: result, total: total, average: total / days });
+});
+
+/**
+ * Get purchases within X days, filter by category
+ */
+app.get('/recentCategory', async (req, res) => {
+    const { id, days, category, image } = req.query;
+
+    console.log(`Recent purchases for: ${id}`);
+
+    if (Number.isNaN(Number(days))) {
+        return res.status(400).json({ message: `Invalid days param: ${days}` });
+    }
+
+    const account = await accounts.findById(id);
+    const categoryDoc = await categories.findOne({ account: id, name: category });
+
+    if (!account) {
+        return res.status(400).json({ message: `Failed to find account with id ${id}` });
+    } else if (!categoryDoc) {
+        return res.status(400).json({ message: `Category ${category} does not exist` });
+    }
+
+    const unixdate = Date.now() - (Number(days) * ONE_DAY);
+
+    const resultP = await purchases.find({ account: id, date: { $gt: unixdate } }).lean().populate(image ? purchasePopulateImage : purchasePopulate);
+
+    const result = [];
+    for (const purchase of resultP) {
+        result.push(...purchase.items.filter(item => item.category?.name === category));
+    }
+
+    const [total, quantity] = result.reduce(([acct, accq], item) => {
+        return [acct + item.price, accq + item.quantity];
+    }, [0, 0]);
+
+    res.status(200).json({ message: 'success', items: result, total: total, average: total / quantity });
 });
 
 /**

@@ -113,17 +113,64 @@ async def get_category_pie_chart(id: str):
         items = await mAPI.get_category_items(id, category)
         if items['total'] > 0:
             data[category] = items['total']
-    return data
+    
+    get_screen_view(data)
 
+    return data
+subcategories = {
+    "Food": ["Groceries", "Restaurants", "Fast Food", "Alcohol", "Delivery"],
+    "Housing": ["Rent/Mortgage", "Electricity", "Internet"],
+    "Transportation": ["Fuel", "Public Transit", "Taxi"],
+    "Shopping": ["Clothing", "Electronics", "Furniture", "Other"],
+    "Entertainment": ["Streaming", "Events", "Video Games", "Movies", "Subscriptions"],
+    "Personal Care": ["Haircuts", "Skincare & Makeup", "Hygiene Products", "Spa & Massage"],
+    "Miscellaneous": ["Uncategorized", "Cash Withdrawal"]
+}
+@app.get("/subcategory-pie-chart")
+async def get_subcategory_pie_chart(id: str, category: str):
+    if not id or id == "":
+        raise HTTPException(status_code=400, detail="Invalid User ID")
+    if category not in categories:
+        raise HTTPException(status_code=400, detail="Invalid Category")
+    data = {}
+    for subcategory in subcategories[category]:
+        items = await mAPI.get_subcategory_items(id, subcategory)
+        if items['total'] > 0:
+            data[subcategory] = items['total']
+    
+    get_screen_view(data)
+    return data
+    
 @app.get("/update-context")
 async def update_context(id: str):
     if not id or id == "":
         return None
     ai.set_user_context(id_user)
 
-# @app.get("/get-page-value")
-# async def page_view(cat: str):
+@app.get("/get-page-value")
+async def page_view(cat: str, date: str):
+    data_str = await mAPI.recent_categories(id_user, cat, date)
 
+    print(data_str)
+    data = json.loads(data_str) if isinstance(data_str, str) else data_str
+
+    prices_graph = []
+    for item in data["items"]:
+        prices_graph.append({"price": item["price"]})
+
+    get_screen_view({"list": data["items"], 
+            "total": data["total"], 
+            "average": data["average"], 
+            "prices_graph": prices_graph})
+
+    return {"list": data["items"], 
+            "total": data["total"], 
+            "average": data["average"], 
+            "prices_graph": prices_graph}
+
+@app.get("/screen-context")
+async def get_screen_view(thing):
+    return await ai.get_screen_context(thing)
 
 if __name__ == "__main__":
     import uvicorn
