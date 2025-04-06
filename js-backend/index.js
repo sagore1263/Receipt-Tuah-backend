@@ -214,9 +214,12 @@ app.get('/userdata', async (req, res) => {
                 }
             ]
         }
-    ]);
+    ]).lean();
+    const lifetimeTotal = data.purchases.reduce((acc, purchase) => {
+        return acc + purchase.total;
+    }, 0);
     console.log(`User data retrieved for account: ${id}`);
-    res.status(200).json({ message: 'success', settings: settings, data: data });
+    res.status(200).json({ message: 'success', settings: settings, data: data, lifetimeTotal: lifetimeTotal});
 });
 
 /**
@@ -364,9 +367,13 @@ app.get('/itemsByCategory', async (req, res) => {
             path: 'subcategory',
             select: 'name -_id',
         }
-    });
+    }).lean();
 
-    res.status(200).json({ message: 'success', items: result.items });
+    const total = result.items.reduce((acc, item) => {
+        return acc + item.price;
+    }, 0);
+
+    res.status(200).json({ message: 'success', items: result.items, total: total, average: total / result.items.length });
 });
 
 /**
@@ -389,9 +396,13 @@ app.get('/itemsBySubcategory', async (req, res) => {
     const result = await subcategoryDoc.populate({
         path: 'items',
         select: 'name quantity purchase price -_id',
-    });
+    }).lean();
 
-    res.status(200).json({ message: 'success', items: result.items });
+    const total = result.items.reduce((acc, item) => {
+        return acc + item.price;
+    }, 0);
+
+    res.status(200).json({ message: 'success', items: result.items, total: total, average: total / result.items.length });
 });
 
 app.listen(PORT, () => {
