@@ -171,14 +171,14 @@ app.get('/userdata', async (req, res) => {
             select: 'name quantity price'
         }
     });
-    const { settings, data } = await account.populate({
+    const { settings, data } = (await account.populate({
         path: 'data.categories',
         select: 'name items subcategories',
         populate: {
             path: 'items',
             select: 'name quantity price'
         }
-    }).select('settings data');
+    }));
     console.log(`User data retrieved for account: ${id}`);
     res.status(200).json({ message: 'success', settings: settings, data: data });
 });
