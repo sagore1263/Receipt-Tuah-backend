@@ -6,6 +6,7 @@ const mongoose = require('mongoose');
 const { dbConnect } = require('@m/init_mongo.js');
 const { accounts } = require('@m/mongo_models.js');
 const hash = require('./hash')
+const cors = require('cors');
 
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
@@ -15,7 +16,7 @@ dotenv.config({ path: path.resolve(__dirname, '../.env') });
 })();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
 app.use(cors({
     origin: 'http://localhost:3000', // Your React app's URL

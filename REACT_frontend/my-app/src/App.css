@@ -613,3 +613,15 @@
   line-height: 1.5;
   font-size: 14px;
 }
+/* Add to App.css */
+.content-area {
+  flex: 1;
+  padding: 20px;
+  transition: opacity 0.3s ease;
+}
+
+.upload-section {
+  margin-top: 20px;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
