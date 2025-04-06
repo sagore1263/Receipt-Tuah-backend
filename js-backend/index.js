@@ -362,7 +362,7 @@ app.get('/recentPurchases', async (req, res) => {
  * Get purchases within X days, filter by category
  */
 app.get('/recentCategory', async (req, res) => {
-    const { id, days, category } = req.query;
+    const { id, days, category, image } = req.query;
 
     console.log(`Recent purchases for: ${id}`);
 
