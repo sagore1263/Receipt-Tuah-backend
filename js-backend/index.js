@@ -17,6 +17,12 @@ dotenv.config({ path: path.resolve(__dirname, '../.env') });
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+app.use(cors({
+    origin: 'http://localhost:3000', // Your React app's URL
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
+  }));
 app.use(express.json());
 
 app.get('/', async (req, res) => {
@@ -58,7 +64,7 @@ app.post('/login', async (req, res) => {
     // Perform login logic here
     console.log(`Login attempt with email: ${email} and password: ${password}`);
 
-    const account = await accounts.findOne({ email: email });
+    const account = await accounts.findOne({ email: email }).lean();
 
     if (!account) {
         return res.status(400).json({ message: 'Account does not exist with this email' });
@@ -68,7 +74,29 @@ app.post('/login', async (req, res) => {
         return res.status(400).json({ message: 'Incorrect password' });
     }
 
-    res.status(200).json({ message: 'Login successful', email });
+    res.status(200).json({ message: 'Login successful', email: email, accountId: account._id });
+});
+
+app.post('/receipt', async (req, res) => {
+    const { email, receipt } = req.body;
+    // Perform login logic here
+    console.log(`Receipt upload attempt with id: ${email}`);
+
+    const account = await accounts.findOne({ email: email });
+
+    if (!account) {
+        return res.status(400).json({ message: 'Account does not exist with this email' });
+    }
+
+    if (receipt) {
+        account.data.receipt = receipt;
+        await account.save();
+        console.log('Receipt uploaded for account: ', email);
+    } else {
+        return res.status(400).json({ message: 'No receipt data provided' });
+    }
+
+    res.status(200).json({ message: 'Receipt upload successful', email });
 });
 
 app.listen(PORT, () => {
