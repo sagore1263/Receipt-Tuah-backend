@@ -631,3 +631,109 @@ body {
 .chat-icon {
   animation: float 4s ease-in-out infinite;
 }
+/* History Section Styling */
+.content-area {
+  background: var(--primary-dark);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  color: var(--text-light);
+}
+
+.header-row h2 {
+  color: var(--text-white);
+  font-size: 1.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.header-row p {
+  color: var(--text-light);
+  font-size: 0.9rem;
+}
+
+/* Input and Button Colors */
+.days-input {
+  border: 2px solid var(--accent-purple);
+  background: var(--primary-purple);
+  color: var(--text-light);
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+}
+
+.days-input:focus {
+  outline: none;
+  border-color: var(--light-purple);
+  box-shadow: 0 0 0 2px var(--highlight-purple);
+}
+
+.fetch-button {
+  background: linear-gradient(135deg, var(--accent-purple), var(--primary-purple));
+  color: var(--text-white);
+  padding: 0.5rem 1.5rem;
+  border-radius: 8px;
+  border: none;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.fetch-button:hover {
+  background: linear-gradient(135deg, var(--primary-purple), var(--accent-purple));
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+/* Table Styling */
+.receipts-table {
+  border: 1px solid var(--accent-purple);
+  background: var(--primary-purple);
+}
+
+.receipts-table th {
+  background: var(--primary-dark);
+  color: var(--highlight-purple);
+  border-bottom: 2px solid var(--accent-purple);
+  padding: 1rem;
+}
+
+.receipts-table td {
+  color: var(--text-light);
+  border-bottom: 1px solid var(--accent-purple);
+  padding: 1rem;
+}
+
+.merchant-cell {
+  color: var(--text-white);
+  font-weight: 500;
+}
+
+.total-cell {
+  color: var(--accent-blue);
+  font-weight: 600;
+}
+
+.receipt-id {
+  color: var(--highlight-purple);
+  font-family: monospace;
+}
+
+/* Empty State */
+.no-receipts {
+  color: var(--text-light);
+  background: var(--primary-purple);
+  padding: 1.5rem;
+}
+
+/* Loading State */
+.loading-message {
+  color: var(--highlight-purple);
+  background: var(--primary-dark);
+}
+
+/* Interactive Elements */
+.receipt-row:hover {
+  background: rgba(105, 73, 165, 0.1);
+  cursor: pointer;
+}
+
+.receipts-count::before {
+  color: var(--accent-blue);
+}
