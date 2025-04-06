@@ -9,6 +9,17 @@ const dateConvert = require('./dateConvert.js');
 const app = express();
 const PORT = process.env.MONGO_PORT || 3001;
 
+const purchasePopulate = [
+    {
+        path: 'items',
+        select: '-purchase -_id'
+    },
+    {
+        path: 'receipt',
+        select: '-_id'
+    }
+];
+
 app.use(cors({
     origin: '*', // Your React app's URL
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
@@ -173,21 +184,12 @@ app.get('/userdata', async (req, res) => {
     const { settings, data } = await account.populate([
         {
             path: 'data.purchases',
-            select: 'total date items receipt -_id',
-            populate: [
-                {
-                    path: 'items',
-                    select: 'name quantity price -_id'
-                },
-                {
-                    path: 'receipt',
-                    select: 'data size mode -_id'
-                }
-            ]
+            select: '-account -_id',
+            populate: purchasePopulate
         },
         {
             path: 'data.categories',
-            select: 'name items subcategories -_id',
+            select: '-account -_id',
             populate: [
                 {
                     path: 'items',
@@ -248,16 +250,7 @@ app.get('/purchasesBeforeDate', async (req, res) => {
         return res.status(400).json({ message: `Failed to find account with id ${id}` });
     }
 
-    const result = await purchases.find({ account: id, date: { $lt: unixdate } }).lean().populate([
-        {
-            path: 'items',
-            select: 'name quantity price -_id'
-        },
-        {
-            path: 'receipt',
-            select: 'data size mode -_id'
-        }
-    ]);
+    const result = await purchases.find({ account: id, date: { $lt: unixdate } }).lean().populate(purchasePopulate);
 
     res.status(200).json({ message: 'success', purchases: result });
 });
@@ -283,16 +276,7 @@ app.get('/purchasesBetweenDates', async (req, res) => {
         return res.status(400).json({ message: `Failed to find account with id ${id}` });
     }
 
-    const result = await purchases.find({ account: id, date: { $gt: unixdate1, $lt: unixdate2 } }).lean().populate([
-        {
-            path: 'items',
-            select: 'name quantity price -_id'
-        },
-        {
-            path: 'receipt',
-            select: 'data size mode -_id'
-        }
-    ]);
+    const result = await purchases.find({ account: id, date: { $gt: unixdate1, $lt: unixdate2 } }).lean().populate(purchasePopulate);
 
     res.status(200).json({ message: 'success', purchases: result });
 });
@@ -317,16 +301,7 @@ app.get('/purchasesAfterDate', async (req, res) => {
         return res.status(400).json({ message: `Failed to find account with id ${id}` });
     }
 
-    const result = await purchases.find({ account: id, date: { $gt: unixdate } }).lean().populate([
-        {
-            path: 'items',
-            select: 'name quantity price -_id'
-        },
-        {
-            path: 'receipt',
-            select: 'data size mode -_id'
-        }
-    ]);
+    const result = await purchases.find({ account: id, date: { $gt: unixdate } }).lean().populate(purchasePopulate);
 
     res.status(200).json({ message: 'success', purchases: result });
 });
@@ -347,16 +322,7 @@ app.get('/recentPurchases', async (req, res) => {
 
     const unixdate = Date.now() - (days * ONE_DAY);
 
-    const result = await purchases.find({ account: id, date: { $gt: unixdate } }).lean().populate([
-        {
-            path: 'items',
-            select: 'name quantity price -_id'
-        },
-        {
-            path: 'receipt',
-            select: 'data size mode -_id'
-        }
-    ]);
+    const result = await purchases.find({ account: id, date: { $gt: unixdate } }).lean().populate(purchasePopulate);
 
     res.status(200).json({ message: 'success', purchases: result });
 });
