@@ -190,7 +190,7 @@ app.get('/userdata', async (req, res) => {
     }
 
     // Populate the account with purchases and categories
-    const { settings, data } = await account.populate([
+    const { settings, data } = await account.lean().populate([
         {
             path: 'data.purchases',
             select: '-account -__v -_id',
@@ -214,7 +214,7 @@ app.get('/userdata', async (req, res) => {
                 }
             ]
         }
-    ]).lean();
+    ]);
     const lifetimeTotal = data.purchases.reduce((acc, purchase) => {
         return acc + purchase.total;
     }, 0);
@@ -360,6 +360,47 @@ app.get('/recentPurchases', async (req, res) => {
 
     res.status(200).json({ message: 'success', purchases: result, total: total, average: total / days });
 });
+
+/**
+ * Get purchases within X days, filter by category
+ */
+// app.get('/recentCategory', async (req, res) => {
+//     const { id, days, category } = req.query;
+
+//     console.log(`Recent purchases for: ${id}`);
+
+//     if (Number.isNaN(Number(days))) {
+//         return res.status(400).json({ message: `Invalid days param: ${days}` });
+//     }
+
+//     const account = await accounts.findById(id);
+//     const categoryDoc = await categories.findOne({ account: id, name: category });
+
+//     if (!account) {
+//         return res.status(400).json({ message: `Failed to find account with id ${id}` });
+//     } else if (!categoryDoc) {
+//         return res.status(400).json({ message: `Category ${category} does not exist` });
+//     }
+
+//     const unixdate = Date.now() - (Number(days) * ONE_DAY);
+
+//     const resultP = await purchases.find({ account: id, date: { $gt: unixdate } }).lean().populate(image ? purchasePopulateImage : purchasePopulate);
+
+//     const result = [];
+//     for (const purchase of resultP) {
+//         const categoryItems = purchase.items.filter(item => {
+//             const itemCategory = categoryDoc.items.filter(catItem => catItem._id.toString() == item._id.toString())[0];
+//             return !!itemCategory;
+//         });
+//         purchase.items = categoryItems;
+//     }
+
+//     const [total, quantity] = result.reduce(([acct, accq], item) => {
+//         return [acct + item.price, accq + item.quantity];
+//     }, [0, 0]);
+
+//     res.status(200).json({ message: 'success', items: , total: total, average: total / quantity });
+// });
 
 /**
  * Get items by category
