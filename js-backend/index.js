@@ -432,6 +432,9 @@ app.get('/getPurchases', async (req, res) => {
     if (type !== 'date' && type !== 'total') {
         return res.status(400).json({ message: `Invalid type param: ${type}. Must be "date" or "total"` });
     }
+    if (Number.isNaN(Number(num))) {
+        return res.status(400).json({ message: `Invalid num param: ${num}` });
+    }
     const ascending = order === 'up';
     const sort = {[type]: ascending ? 1 : -1};
 
