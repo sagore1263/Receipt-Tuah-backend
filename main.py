@@ -6,6 +6,7 @@ import str_format as sf
 import json
 from PIL import Image
 import io
+import base64
 app = FastAPI()
 
 app.add_middleware(
@@ -36,14 +37,16 @@ async def ai_image():
 async def ai_image_to_text(path: str):
     text = await ai.convert_image_to_text(path)
     result = await ai.receipt_to_dict(text)
-    result = sf.clean_and_parse_json_string(result)
+    result = sf.clean_and_parse_json_string(response_text=result)
     return json.loads(result)
 @app.post("/upload-image/")
 async def upload_image(file: UploadFile = File(...)):
     contents = await file.read()
     image = Image.open(io.BytesIO(contents))
     # Do your image processing here
-    return await ai.ai_image_to_dict(image)
+    receipt = await ai.ai_image_to_dict(image)
+    encoded_image = base64.b64encode(contents).decode("utf-8")
+    return {"receipt": receipt, "imageBytes": encoded_image, "imageSize": image.size, "imageMode": image.mode}
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app)
