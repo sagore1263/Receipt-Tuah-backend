@@ -38,13 +38,24 @@ async def generate_response(prompt, id_user, enable_search = False):
     global model
 
     db_context = await get_context_from_db(id_user)
-    print(db_context)
 
     if db_context:
-        if isinstance(db_context, (dict, list)):
-            formatted_context = json.dumps(db_context, indent=2)
+        if isinstance(db_context, dict):
+            # Create a deep copy to avoid modifying the original
+            clean_context = db_context.copy()
+            
+            # Remove _id from data object if it exists
+            if 'data' in clean_context and isinstance(clean_context['data'], dict) and '_id' in clean_context['data']:
+                del clean_context['data']['_id']
+                
+            formatted_context = json.dumps(clean_context, indent=2)
+        elif isinstance(db_context, list):
+            # For lists, create a version without _id fields
+            clean_context = [{k: v for k, v in item.items() if k != '_id'} for item in db_context]
+            formatted_context = json.dumps(clean_context, indent=2)
         else:
             formatted_context = db_context
+
         prompt = f"""You are a helpful assistant helping a user with their finances.
             User query: {prompt}
 
