@@ -134,7 +134,9 @@ async def get_subcategory_pie_chart(id: str, category: str):
         raise HTTPException(status_code=400, detail="Invalid Category")
     data = {}
     for subcategory in subcategories[category]:
-        items = await mAPI.get_subcategory_items(id, subcategory)
+        items_str = await mAPI.get_subcategory_items(id, subcategory)
+        print(items_str)
+        items = json.loads(items_str) if isinstance(items_str, str) else items_str
         if items['total'] > 0:
             data[subcategory] = items['total']
     

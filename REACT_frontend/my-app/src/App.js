@@ -72,85 +72,154 @@ const App = () => {
   const [receipts, setReceipts] = useState([]);
   const COLORS = ["#8884d8", "#8dd1e1", "#82ca9d", "#a4de6c", "#d0ed57", "#ffc658"];
   const [categoryData, setCategoryData] = useState([]);
-const [userId, setUserId] = useState('');
-const [chartLoading, setChartLoading] = useState(true);
-const [chartError, setChartError] = useState(null);
-const [chartRefreshTrigger, setChartRefreshTrigger] = useState(0);
+  const [userId, setUserId] = useState('');
+  const [chartLoading, setChartLoading] = useState(true);
+  const [chartError, setChartError] = useState(null);
+  const [chartRefreshTrigger, setChartRefreshTrigger] = useState(0);
+  const [viewingSubcategories, setViewingSubcategories] = useState(false);
+  const [subcategoryData, setSubcategoryData] = useState([]);
+  const [subcategoryLoading, setSubcategoryLoading] = useState(false);
+  const [currentCategory, setCurrentCategory] = useState(null);
 
-useEffect(() => {
-  if (userId) {
-    setChartLoading(true);
-    fetch(`http://localhost:8000/category-pie-chart?id=${userId}`)
+  useEffect(() => {
+    if (userId) {
+      setChartLoading(true);
+      fetch(`http://localhost:8000/category-pie-chart?id=${userId}`)
+        .then(response => {
+          if (!response.ok) throw new Error('Failed to fetch categories');
+          const yur = response.json();
+          console.log(yur)
+          return yur;
+        })
+        .then(data => {
+          // Transform API response to Recharts format
+          const formattedData = Object.entries(data).map(([name, value]) => ({
+            name,
+            value
+          }));
+          setCategoryData(formattedData);
+          setChartError(null);
+        })
+        .catch(error => {
+          console.error('Chart data error:', error);
+          setChartError(error.message);
+        })
+        .finally(() => setChartLoading(false));
+    }
+  }, [userId, chartRefreshTrigger]);
+
+  const fetchSubcategoryData = (category) => {
+    setSubcategoryLoading(true);
+    fetch(`http://localhost:8000/subcategory-pie-chart?id=${userId}&category=${category}`)
       .then(response => {
-        if (!response.ok) throw new Error('Failed to fetch categories');
-        const yur = response.json();
-        console.log(yur)
-        return yur;
+        if (!response.ok) throw new Error('Failed to fetch subcategories');
+        return response.json();
       })
       .then(data => {
-        // Transform API response to Recharts format
         const formattedData = Object.entries(data).map(([name, value]) => ({
           name,
           value
         }));
-        setCategoryData(formattedData);
-        setChartError(null);
+        setSubcategoryData(formattedData);
+        setViewingSubcategories(true);
       })
       .catch(error => {
-        console.error('Chart data error:', error);
-        setChartError(error.message);
+        console.error('Subcategory data error:', error);
       })
-      .finally(() => setChartLoading(false));
-  }
-}, [userId, chartRefreshTrigger]);
-  // Add state for selected category
-  const [selectedCategory, setSelectedCategory] = useState(null);
-const sampleCategoryData = [
-  { name: 'Food', value: 400 },
-  { name: 'Utilities', value: 300 },
-  { name: 'Shopping', value: 300 },
-  { name: 'Travel', value: 200 },
-  { name: 'Other', value: 278 },
-];
-  
-  // Create chart component
-  const CategoryPieChart = () => (
-    <div className="chart-container">
-      <h3>Spending by Category</h3>
-      {chartLoading ? (
-        <div className="loading-message">Loading chart data...</div>
-      ) : chartError ? (
-        <div className="error-message">Error loading chart: {chartError}</div>
-      ) : categoryData.length > 0 ? (
-        <ResponsiveContainer width="100%" height={300}>
-          <PieChart>
-            <Pie
-              data={categoryData}
-              cx="50%"
-              cy="50%"
-              innerRadius={60}
-              outerRadius={80}
-              paddingAngle={5}
-              dataKey="value"
-              onClick={(data) => setSelectedCategory(data.name)}
-            >
-              {categoryData.map((entry, index) => (
-                <Cell 
-                  key={`cell-${index}`} 
-                  fill={COLORS[index % COLORS.length]}
-                  stroke="#fff"
-                />
-              ))}
-            </Pie>
-            <Tooltip />
-            <Legend />
-          </PieChart>
-        </ResponsiveContainer>
-      ) : (
-        <div className="no-data-message">No spending data available</div>
-      )}
-    </div>
-  );
+      .finally(() => setSubcategoryLoading(false));
+  };
+
+  const handleBackButton = () => {
+    setViewingSubcategories(false);
+    setCurrentCategory(null);
+  };
+
+  const CategoryPieChart = () => {
+    const handleCategoryClick = (category) => {
+      setCurrentCategory(category);
+      fetchSubcategoryData(category);
+    };
+
+    return (
+      <div className="chart-container">
+        <div className="chart-header">
+          <h3>
+            {viewingSubcategories ? `${currentCategory} Subcategories` : 'Spending by Category'}
+          </h3>
+          {viewingSubcategories && (
+            <button className="back-button" onClick={handleBackButton}>
+              ← Back to Categories
+            </button>
+          )}
+        </div>
+
+        {/* Loading States */}
+        {(viewingSubcategories ? subcategoryLoading : chartLoading) ? (
+          <div className="loading-message">Loading chart data...</div>
+        ) : viewingSubcategories ? (
+          // Subcategory Pie Chart
+          subcategoryData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={subcategoryData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {subcategoryData.map((entry, index) => (
+                    <Cell 
+                      key={`cell-${index}`} 
+                      fill={COLORS[index % COLORS.length]}
+                      stroke="#fff"
+                    />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="no-data-message">No subcategory data available</div>
+          )
+        ) : chartError ? (
+          // Error display
+          <div className="error-message">Error loading chart: {chartError}</div>
+        ) : categoryData.length > 0 ? (
+          // Main Category Pie Chart
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie
+                data={categoryData}
+                cx="50%"
+                cy="50%"
+                innerRadius={60}
+                outerRadius={80}
+                paddingAngle={5}
+                dataKey="value"
+                onClick={(data) => handleCategoryClick(data.name)}
+              >
+                {categoryData.map((entry, index) => (
+                  <Cell 
+                    key={`cell-${index}`} 
+                    fill={COLORS[index % COLORS.length]}
+                    stroke="#fff"
+                  />
+                ))}
+              </Pie>
+              <Tooltip />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="no-data-message">No spending data available</div>
+        )}
+      </div>
+    );
+  };
 
   useEffect(() => {
     const authStatus = sessionStorage.getItem('isAuthenticated');
