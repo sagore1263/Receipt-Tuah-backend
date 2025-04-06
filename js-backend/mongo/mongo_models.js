@@ -11,7 +11,6 @@ const accountSchema = new mongoose.Schema({
         type: {
             purchases: { type: [mongoose.Schema.Types.ObjectId], ref: 'Purchase', required: true },
             categories: { type: [mongoose.Schema.Types.ObjectId], ref: 'Category', required: true },
-            subcategories: { type: [mongoose.Schema.Types.ObjectId], ref: 'Subcategory', required: true },
         },
         required: true,
         default: () => ({ purchases: [], categories: [], subcategories: [] }),

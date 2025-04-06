@@ -124,8 +124,8 @@ app.post('/receipt', async (req, res) => {
     const subcategoryUpdates = [];
     const categoryNames = Items.map(item => item.category);
     const subcategoryNames = Items.map(item => item.subcategory);
-    const categoryDocs = await categories.find({ name: { $in: [...new Set(categoryNames)] } });
-    const subcategoryDocs = await subcategories.find({ name: { $in: [...new Set(subcategoryNames)] } });
+    const categoryDocs = await categories.find({ account: id, name: { $in: [...new Set(categoryNames)] } });
+    const subcategoryDocs = await subcategories.find({ account: id, name: { $in: [...new Set(subcategoryNames)] } });
     const itemsToInsert = [];
 
     for (const item of Items) {
@@ -187,10 +187,20 @@ app.get('/userdata', async (req, res) => {
     const { settings, data } = await account.populate({
         path: 'data.categories',
         select: 'name items subcategories',
-        populate: {
-            path: 'items',
-            select: 'name quantity price'
-        }
+        populate: [
+            {
+                path: 'items',
+                select: 'name quantity price'
+            },
+            {
+                path: 'subcategories',
+                select: 'name items',
+                populate: {
+                    path: 'items',
+                    select: 'name quantity price'
+                }
+            }
+        ]
     });
     console.log(`User data retrieved for account: ${id}`);
     res.status(200).json({ message: 'success', settings: settings, data: data });
