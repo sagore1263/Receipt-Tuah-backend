@@ -72,60 +72,108 @@ const App = () => {
   const [receipts, setReceipts] = useState([]);
   const COLORS = ["#8884d8", "#8dd1e1", "#82ca9d", "#a4de6c", "#d0ed57", "#ffc658"];
   const [categoryData, setCategoryData] = useState([]);
-  const [userId, setUserId] = useState('');
-  const [chartLoading, setChartLoading] = useState(true);
-  const [chartError, setChartError] = useState(null);
-  const [chartRefreshTrigger, setChartRefreshTrigger] = useState(0);
-  const [useLocation, setUseLocation] = useState(
-    sessionStorage.getItem('useLocation') === 'true'
-  );
-  const [location, setLocation] = useState(
-    sessionStorage.getItem('userLocation') || ''
-  );
-  const [locationStatus, setLocationStatus] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [days, setDays] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
-  const [pageData, setPageData] = useState(null);
-  const [pageLoading, setPageLoading] = useState(false);
-  const [pageError, setPageError] = useState(null);
-  const [viewingSubcategories, setViewingSubcategories] = useState(false);
-  const [subcategoryData, setSubcategoryData] = useState([]);
-  const [subcategoryLoading, setSubcategoryLoading] = useState(false);
-  const [currentCategory, setCurrentCategory] = useState(null);
+const [userId, setUserId] = useState('');
+const [chartLoading, setChartLoading] = useState(true);
+const [chartError, setChartError] = useState(null);
+const [chartRefreshTrigger, setChartRefreshTrigger] = useState(0);
+const [useLocation, setUseLocation] = useState(
+  sessionStorage.getItem('useLocation') === 'true'
+);
+const [location, setLocation] = useState(
+  sessionStorage.getItem('userLocation') || ''
+);
+const [locationStatus, setLocationStatus] = useState('');
+const [selectedCategory, setSelectedCategory] = useState(null);
+const [days, setDays] = useState(0);
+const [isLoading, setIsLoading] = useState(false);
+const [pageData, setPageData] = useState(null);
+const [pageLoading, setPageLoading] = useState(false);
+const [pageError, setPageError] = useState(null);
+const [viewingSubcategories, setViewingSubcategories] = useState(false);
+const [subcategoryData, setSubcategoryData] = useState([]);
+const [subcategoryLoading, setSubcategoryLoading] = useState(false);
+const [currentCategory, setCurrentCategory] = useState(null);
+const SubcategoryDropdown = () => {
+  const subcategories = [
+    'Food', 'Housing', 'Transportation', 
+    'Shopping', 'Entertainment', 
+    'Personal Care', 'Miscellaneous'
+  ];
 
-  useEffect(() => {
-    if (userId) {
-      setChartLoading(true);
-      fetch(`http://localhost:8000/category-pie-chart?id=${userId}`)
-        .then(response => {
-          if (!response.ok) throw new Error('Failed to fetch categories');
-          const yur = response.json();
-          console.log(yur)
-          return yur;
-        })
-        .then(data => {
-          // Transform API response to Recharts format
-          const formattedData = Object.entries(data).map(([name, value]) => ({
-            name,
-            value
-          }));
-          setCategoryData(formattedData);
-          setChartError(null);
-        })
-        .catch(error => {
-          console.error('Chart data error:', error);
-          setChartError(error.message);
-        })
-        .finally(() => setChartLoading(false));
-    }
-  }, [userId, chartRefreshTrigger]);
-  
+  return (
+    <div className="subcategory-selector">
+      <select
+        value={currentCategory}
+        onChange={(e) => setCurrentCategory(e.target.value)}
+        className="subcategory-dropdown"
+      >
+        {subcategories.map((subcat) => (
+          <option key={subcat} value={subcat}>
+            {subcat}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+};
+useEffect(() => {
+  if (userId) {
+    setChartLoading(true);
+    fetch(`http://localhost:8000/category-pie-chart?id=${userId}`)
+      .then(response => {
+        if (!response.ok) throw new Error('Failed to fetch categories');
+        const yur = response.json();
+        console.log(yur)
+        return yur;
+      })
+      .then(data => {
+        // Transform API response to Recharts format
+        const formattedData = Object.entries(data).map(([name, value]) => ({
+          name,
+          value
+        }));
+        setCategoryData(formattedData);
+        setChartError(null);
+      })
+      .catch(error => {
+        console.error('Chart data error:', error);
+        setChartError(error.message);
+      })
+      .finally(() => setChartLoading(false));
+  }
+}, [userId, chartRefreshTrigger]);
+
+const fetchSubcategoryData = (category) => {
+  setSubcategoryLoading(true);
+  fetch(`http://localhost:8000/subcategory-pie-chart?id=${userId}&category=${category}`)
+    .then(response => {
+      if (!response.ok) throw new Error('Failed to fetch subcategories');
+      return response.json();
+    })
+    .then(data => {
+      const formattedData = Object.entries(data).map(([name, value]) => ({
+        name,
+        value
+      }));
+      setSubcategoryData(formattedData);
+      setViewingSubcategories(true);
+    })
+    .catch(error => {
+      console.error('Subcategory data error:', error);
+    })
+    .finally(() => setSubcategoryLoading(false));
+};
+
+const handleBackButton = () => {
+  setViewingSubcategories(false);
+  setCurrentCategory(null);
+};
+
 // Add useEffect for fetching category data
 useEffect(() => {
   if (userId) {
     setPageLoading(true);
-    fetch(`http://localhost:8000/get-page-value?cat=Entertainment,days=30`, {
+    fetch(`http://localhost:8000/get-page-value?subcat=${currentCategory}&days=30`, {
       headers: {
         'Authorization': `Bearer ${sessionStorage.getItem('token')}`
       }
@@ -199,6 +247,35 @@ const CategoryPieChart = () => {
       {/* Loading States */}
       {(viewingSubcategories ? subcategoryLoading : chartLoading) ? (
         <div className="loading-message">Loading chart data...</div>
+      ) : viewingSubcategories ? (
+        // Subcategory Pie Chart
+        subcategoryData.length > 0 ? (
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie
+                data={subcategoryData}
+                cx="50%"
+                cy="50%"
+                innerRadius={60}
+                outerRadius={80}
+                paddingAngle={5}
+                dataKey="value"
+              >
+                {subcategoryData.map((entry, index) => (
+                  <Cell 
+                    key={`cell-${index}`} 
+                    fill={COLORS[index % COLORS.length]}
+                    stroke="#fff"
+                  />
+                ))}
+              </Pie>
+              <Tooltip />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="no-data-message">No subcategory data available</div>
+        )
       ) : viewingSubcategories ? (
         // Subcategory Pie Chart
         subcategoryData.length > 0 ? (
@@ -610,12 +687,6 @@ const CategoriesTab = () => (
                   alt={image.name}
                   className="preview-image"
                 />
-                <button 
-                  className="delete-image-btn"
-                  onClick={() => handleDeleteImage(index)}
-                >
-                  ×
-                </button>
                 <p>{image.name}</p>
               </div>
             ))}
@@ -648,7 +719,6 @@ const CategoriesTab = () => (
     <div className="header-row">
       <div className="user-greeting">
         <h2>History</h2>
-        <p>Recent Receipts</p>
       </div>
       <div className="days-input-container">
         <input
