@@ -157,29 +157,45 @@ app.get('/userdata', async (req, res) => {
 
     console.log(`User data request for id: ${id}`);
 
-    const account = await accounts.findById(id);
+    try {
+        // First find the account
+        let account = await accounts.findById(id);
 
-    if (!account) {
-        return res.status(400).json({ message: `Failed to find account with id ${id}` });
+        if (!account) {
+            return res.status(400).json({ message: `Failed to find account with id ${id}` });
+        }
+
+        // Then populate it (separately, not chained)
+        await account.populate({
+            path: 'data.purchases',
+            select: 'total date items receipt',
+            populate: {
+                path: 'items',
+                select: 'name quantity price'
+            }
+        });
+        
+        await account.populate({
+            path: 'data.categories',
+            select: 'name items subcategories',
+            populate: {
+                path: 'items',
+                select: 'name quantity price'
+            }
+        });
+
+        console.log(`User data retrieved for account: ${id}`);
+        
+        // Now respond with the populated data
+        res.status(200).json({ 
+            message: 'success', 
+            settings: account.settings, 
+            data: account.data 
+        });
+    } catch (err) {
+        console.error(`Error fetching user data: ${err.message}`);
+        res.status(500).json({ message: 'Server error', error: err.message });
     }
-
-    const { settings, data } = account.populate({
-        path: 'data.purchases',
-        select: 'total date items receipt',
-        populate: {
-            path: 'items',
-            select: 'name quantity price'
-        }
-    }).popualte({
-        path: 'data.categories',
-        select: 'name items subcategories',
-        populate: {
-            path: 'items',
-            select: 'name quantity price'
-        }
-    }).select('settings data');
-    console.log(`User data retrieved for account: ${id}`);
-    res.status(200).json({ message: 'success', settings: settings, data: data });
 });
 
 app.listen(PORT, () => {
