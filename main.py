@@ -113,6 +113,9 @@ async def get_category_pie_chart(id: str):
         items = await mAPI.get_category_items(id, category)
         if items['total'] > 0:
             data[category] = items['total']
+    
+    get_screen_view(data)
+
     return data
 subcategories = {
     "Food": ["Groceries", "Restaurants", "Fast Food", "Alcohol", "Delivery"],
@@ -134,6 +137,8 @@ async def get_subcategory_pie_chart(id: str, category: str):
         items = await mAPI.get_subcategory_items(id, subcategory)
         if items['total'] > 0:
             data[subcategory] = items['total']
+    
+    get_screen_view(data)
     return data
     
 @app.get("/update-context")
@@ -144,15 +149,24 @@ async def update_context(id: str):
 
 @app.get("/get-page-value")
 async def page_view(cat: str, date: str):
-    if not id_user or id_user == "":
-        return "Invalid User ID"
-    data = await mAPI.recent_categories(id_user, cat, date)
+    data_str = await mAPI.recent_categories(id_user, cat, date)
+
+    print(data_str)
+    data = json.loads(data_str) if isinstance(data_str, str) else data_str
 
     prices_graph = []
-    for item in data.items:
-        prices_graph.append({"price": item.price})
+    for item in data["items"]:
+        prices_graph.append({"price": item["price"]})
 
-    return {"list": data.items, "total": data.total, "average": data.average, "prices_graph": data.prices_graph}
+    get_screen_view({"list": data["items"], 
+            "total": data["total"], 
+            "average": data["average"], 
+            "prices_graph": prices_graph})
+
+    return {"list": data["items"], 
+            "total": data["total"], 
+            "average": data["average"], 
+            "prices_graph": prices_graph}
 @app.get("/get-recent-receipts")
 async def get_recent_receipts():
     if not id_user or id_user == "":
@@ -164,8 +178,8 @@ async def get_recent_receipts():
     for receipt in data['purchases']:
         receipts.append([receipt['date'], receipt['merchant'], receipt['total'], receipt['id']])
 @app.get("/screen-context")
-async def get_screen_view():
-    return await ai.get_screen_context(page_view())
+async def get_screen_view(thing):
+    return await ai.get_screen_context(thing)
 
 if __name__ == "__main__":
     import uvicorn

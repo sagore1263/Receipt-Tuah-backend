@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import './App.css';
 import ChatAssistant from './ChatAssistant';
 import { login, signup } from './AuthService';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 const Login = ({ onLogin }) => {
   const [isLogin, setIsLogin] = useState(true);
@@ -71,16 +70,38 @@ const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState('');
   const [receipts, setReceipts] = useState([]);
-  // Add this inside your App component
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A28DFF'];
-  const categoryData = [
-    { name: 'Food', value: 400 },
-    { name: 'Utilities', value: 300 },
-    { name: 'Shopping', value: 300 },
-    { name: 'Travel', value: 200 },
-    { name: 'Other', value: 278 },
-  ];
-  
+  const COLORS = ["#8884d8", "#8dd1e1", "#82ca9d", "#a4de6c", "#d0ed57", "#ffc658"];
+  const [categoryData, setCategoryData] = useState([]);
+const [userId, setUserId] = useState('');
+const [chartLoading, setChartLoading] = useState(true);
+const [chartError, setChartError] = useState(null);
+
+useEffect(() => {
+  if (userId) {
+    setChartLoading(true);
+    fetch(`http://localhost:8000/category-pie-chart?id=${userId}`)
+      .then(response => {
+        if (!response.ok) throw new Error('Failed to fetch categories');
+        const yur = response.json();
+        console.log(yur)
+        return yur;
+      })
+      .then(data => {
+        // Transform API response to Recharts format
+        const formattedData = Object.entries(data).map(([name, value]) => ({
+          name,
+          value
+        }));
+        setCategoryData(formattedData);
+        setChartError(null);
+      })
+      .catch(error => {
+        console.error('Chart data error:', error);
+        setChartError(error.message);
+      })
+      .finally(() => setChartLoading(false));
+  }
+}, [userId]);
   // Add state for selected category
   const [selectedCategory, setSelectedCategory] = useState(null);
 const sampleCategoryData = [
@@ -95,29 +116,38 @@ const sampleCategoryData = [
   const CategoryPieChart = () => (
     <div className="chart-container">
       <h3>Spending by Category</h3>
-      <ResponsiveContainer width="100%" height={300}>
-        <PieChart>
-          <Pie
-            data={categoryData}
-            cx="50%"
-            cy="50%"
-            innerRadius={60}
-            outerRadius={80}
-            paddingAngle={5}
-            dataKey="value"
-            onClick={(data) => setSelectedCategory(data.name)}
-          >
-            {categoryData.map((entry, index) => (
-              <Cell 
-                key={`cell-${index}`} 
-                fill={COLORS[index % COLORS.length]}
-                stroke="#fff"
-              />
-            ))}
-          </Pie>
-          <Tooltip />
-        </PieChart>
-      </ResponsiveContainer>
+      {chartLoading ? (
+        <div className="loading-message">Loading chart data...</div>
+      ) : chartError ? (
+        <div className="error-message">Error loading chart: {chartError}</div>
+      ) : categoryData.length > 0 ? (
+        <ResponsiveContainer width="100%" height={300}>
+          <PieChart>
+            <Pie
+              data={categoryData}
+              cx="50%"
+              cy="50%"
+              innerRadius={60}
+              outerRadius={80}
+              paddingAngle={5}
+              dataKey="value"
+              onClick={(data) => setSelectedCategory(data.name)}
+            >
+              {categoryData.map((entry, index) => (
+                <Cell 
+                  key={`cell-${index}`} 
+                  fill={COLORS[index % COLORS.length]}
+                  stroke="#fff"
+                />
+              ))}
+            </Pie>
+            <Tooltip />
+            <Legend />
+          </PieChart>
+        </ResponsiveContainer>
+      ) : (
+        <div className="no-data-message">No spending data available</div>
+      )}
     </div>
   );
 
@@ -204,22 +234,29 @@ const sampleCategoryData = [
     setIsAuthenticated(true);
     setUsername(email);
     setActiveTab('Home');
+    
+    // Set user ID from backend response
     fetch(`http://localhost:8000/set-id?id=${accountId}`)
-    .then(response => {
-      if (!response.ok) throw new Error('ID setting failed');
-      return response.text();
-    })
-    .then(id => console.log('ID set to:', id))
-    .catch(error => console.error('ID setting error:', error));
+      .then(response => {
+        if (!response.ok) throw new Error('ID setting failed');
+        return response.text();
+      })
+      .then(id => {
+        console.log('ID set to:', id);
+        setUserId(id); // Store the actual user ID from backend
+      })
+      .catch(error => console.error('ID setting error:', error));
   };
+  
 
   const handleLogout = () => {
-    sessionStorage.clear();
-    setIsAuthenticated(false);
-    setUsername('');
-    setReceipts([]);
-    
-  };
+  sessionStorage.clear();
+  setIsAuthenticated(false);
+  setUsername('');
+  setReceipts([]);
+  setUserId('');
+  setCategoryData([]);
+};
 
   const handleDeleteImage = (indexToDelete) => {
     setImages(prev => {
@@ -271,30 +308,7 @@ const sampleCategoryData = [
         <div className="analytics-section">
           <h3>Spending Overview</h3>
           <div className="chart-container">
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={sampleCategoryData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={5}
-                  dataKey="value"
-                  onClick={(data) => setSelectedCategory(data.name)}
-                >
-                  {sampleCategoryData.map((entry, index) => (
-                    <Cell 
-                      key={`cell-${index}`} 
-                      fill={COLORS[index % COLORS.length]}
-                      stroke="#fff"
-                    />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
+            <CategoryPieChart />
           </div>
   
           {selectedCategory && (
@@ -363,7 +377,6 @@ const sampleCategoryData = [
           <label htmlFor="upload-input" className="upload-button">
             Upload image
           </label>
-          
           <div className="image-preview-container">
             {images.map((image, index) => (
               <div key={index} className="image-preview">
