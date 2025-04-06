@@ -5,6 +5,7 @@ const { accounts, receipts, purchases, items, categories, subcategories } = requ
 const hash = require('./hash')
 const cors = require('cors');
 const dateConvert = require('./dateConvert.js');
+const initCategories = require('@m/init_categories.js');
 
 const app = express();
 const PORT = process.env.MONGO_PORT || 3001;
@@ -12,11 +13,11 @@ const PORT = process.env.MONGO_PORT || 3001;
 const purchasePopulate = [
     {
         path: 'items',
-        select: '-purchase -_id'
+        select: '-purchase -__v'
     },
     {
         path: 'receipt',
-        select: '-_id'
+        select: '-__v'
     }
 ];
 
@@ -60,11 +61,13 @@ app.post('/signup', async (req, res) => {
 
     const account = new accounts({
         email: email,
-        username: email.split('@')[0],
+        // username: email.split('@')[0],
         password: hash(password),
     });
 
     const { _id } = await account.save();
+    // Give new account categories and subcategories
+    await initCategories(_id);
     console.log(`Account created: Email: ${email}, id: ${_id}`);
 
     return res.status(200).json({ message: 'success', email: email, accountId: _id });
@@ -129,7 +132,7 @@ app.post('/receipt', async (req, res) => {
     const subcategoryDocs = await subcategories.find({ account: id, name: { $in: [...new Set(subcategoryNames)] } });
     const itemsToInsert = [];
 
-    for (const item of Items) {
+    for (const item of Items ?? []) {
         // ok for item categories to be null
         const category = categoryDocs.filter(category => category?.name == item.category)[0];
         const subcategory = subcategoryDocs.filter(subcategory => subcategory?.name == item.subcategory)[0];
@@ -314,17 +317,54 @@ app.get('/recentPurchases', async (req, res) => {
 
     console.log(`Recent purchases for: ${id}`);
 
+    if (Number.isNaN(Number(days))) {
+        return res.status(400).json({ message: `Invalid days param: ${days}` });
+    }
+
     const account = await accounts.findById(id);
 
     if (!account) {
         return res.status(400).json({ message: `Failed to find account with id ${id}` });
     }
 
-    const unixdate = Date.now() - (days * ONE_DAY);
+    const unixdate = Date.now() - (Number(days) * ONE_DAY);
 
     const result = await purchases.find({ account: id, date: { $gt: unixdate } }).lean().populate(purchasePopulate);
 
     res.status(200).json({ message: 'success', purchases: result });
+});
+
+/**
+ * Get items by category
+ */
+app.get('/itemsByCategory', async (req, res) => {
+    const { id, category } = req.query;
+
+    console.log(`Purchases by category for: ${id}`);
+
+    const account = await accounts.findById(id);
+    const categoryDoc = await categories.findOne({ name: category });
+
+    if (!account) {
+        return res.status(400).json({ message: `Failed to find account with id ${id}` });
+    } else if (!categoryDoc) {
+        return res.status(400).json({ message: `Category ${category} does not exist` });
+    }
+
+    const result = await items.aggregate([
+        {
+          $lookup: {
+            from: 'categories',
+            localField: 'category',
+            foreignField: '_id',
+            as: 'category'
+          }
+        },
+        { $unwind: '$category' },
+        { $match: { 'category.name': category, 'category.account': id } }
+    ]);
+
+    res.status(200).json({ message: 'success', items: result });
 });
 
 app.listen(PORT, () => {
