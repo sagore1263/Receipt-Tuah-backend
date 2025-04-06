@@ -44,14 +44,9 @@ def home_view():
 def set_id_view(id: str):
     global id_user
     id_user = id
-    return id_user
-
-@app.get("/clear-chat")
-def clear_chat_view(id: str):
-    global id_user
-    id_user = id
     ai.clear_chat()
-    return "Chat cleared and id set to " + id_user
+    ai.set_user_context(id_user)
+    return id_user
 
 @app.get("/enable-search")
 def enable_search_view():
@@ -119,9 +114,16 @@ async def get_category_pie_chart(id: str):
         if items['total'] > 0:
             data[category] = items['total']
     return data
-        
 
-    
+@app.get("/update-context")
+async def update_context(id: str):
+    if not id or id == "":
+        return None
+    ai.set_user_context(id_user)
+
+# @app.get("/get-page-value")
+# async def page_view(cat: str):
+
 
 if __name__ == "__main__":
     import uvicorn
