@@ -111,8 +111,7 @@ app.post('/receipt', async (req, res) => {
     const new_purchase = {};
     const receipt = await new receipts({
         data: purchase.imageBytes,
-        size: purchase.imageSize,
-        mode: purchase.imageMode
+        mimeType: purchase.mimeType,
     }).save();
     new_purchase.date = dateConvert(Date, Time);
     new_purchase.merchant = Merchant;

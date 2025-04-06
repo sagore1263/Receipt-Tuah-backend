@@ -33,8 +33,7 @@ const purchaseSchema = new mongoose.Schema({
 // Receipt
 const receiptSchema = new mongoose.Schema({
     data: { type: Buffer, required: true }, // Buffer for image data
-    size: { type: [Number], min: [2, 'Receipt image size must be 2D'], max: [2, 'Receipt image size must be 2D'], required: true },
-    mode: { type: String, required: true },
+    mimeType: { type: String, required: true }, // MIME type of the image (e.g., 'image/jpeg')
 });
 
 // Item
