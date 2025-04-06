@@ -631,3 +631,27 @@ body {
 .chat-icon {
   animation: float 4s ease-in-out infinite;
 }
+
+/* Chart Header Styles */
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.back-button {
+  background-color: #4da6ff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+}
+
+.back-button:hover {
+  background-color: #3285d1;
+}
