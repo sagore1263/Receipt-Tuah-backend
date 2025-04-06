@@ -4,6 +4,9 @@ import os
 import json
 import str_format as sf
 from PIL import Image
+
+from google.genai.types import Tool, GenerateContentConfig, GoogleSearch
+
 load_dotenv()
 
 global model
@@ -12,11 +15,16 @@ model = genai.Client(api_key=os.getenv("API_KEY"))
 global chat
 chat = model.aio.chats.create(model = "gemini-2.5-pro-exp-03-25")
 
+global google_search_tool
+google_search_tool = Tool(
+    google_search = GoogleSearch()
+)
+
 def clear_chat():
     global chat
     chat = model.aio.chats.create(model = "gemini-2.5-pro-exp-03-25")
 
-async def generate_response(prompt):
+async def generate_response(prompt, enable_search = False):
     global chat
     global model
 
