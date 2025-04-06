@@ -114,7 +114,28 @@ async def get_category_pie_chart(id: str):
         if items['total'] > 0:
             data[category] = items['total']
     return data
-
+subcategories = {
+    "Food": ["Groceries", "Restaurants", "Fast Food", "Alcohol", "Delivery"],
+    "Housing": ["Rent/Mortgage", "Electricity", "Internet"],
+    "Transportation": ["Fuel", "Public Transit", "Taxi"],
+    "Shopping": ["Clothing", "Electronics", "Furniture", "Other"],
+    "Entertainment": ["Streaming", "Events", "Video Games", "Movies", "Subscriptions"],
+    "Personal Care": ["Haircuts", "Skincare & Makeup", "Hygiene Products", "Spa & Massage"],
+    "Miscellaneous": ["Uncategorized", "Cash Withdrawal"]
+}
+@app.get("/subcategory-pie-chart")
+async def get_subcategory_pie_chart(id: str, category: str):
+    if not id or id == "":
+        raise HTTPException(status_code=400, detail="Invalid User ID")
+    if category not in categories:
+        raise HTTPException(status_code=400, detail="Invalid Category")
+    data = {}
+    for subcategory in subcategories[category]:
+        items = await mAPI.get_subcategory_items(id, subcategory)
+        if items['total'] > 0:
+            data[subcategory] = items['total']
+    return data
+    
 @app.get("/update-context")
 async def update_context(id: str):
     if not id or id == "":

@@ -65,3 +65,16 @@ async def recent_categories(id_user, category, days):
                 error_text = await response.text()
                 print(f"Server error {response.status}: {error_text[:100]}...")
                 return f"Error retrieving data (Status: {response.status})"
+async def get_subcategory_items(id_user, subcategory):
+    if not id_user or id_user == "":
+        return "Invalid User ID"
+    async with aiohttp.ClientSession() as session:
+        url = f"{DB_HOST}/itemsBySubcategory?id={id_user}&subcategory={subcategory}"
+        print(f"Making request to: {url}")
+        async with session.get(url) as response:
+            if response.status == 200:
+                return await response.json()
+            else:
+                error_text = await response.text()
+                print(f"Server error {response.status}: {error_text[:100]}...")
+                return f"Error retrieving data (Status: {response.status})"
