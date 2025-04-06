@@ -1,19 +1,10 @@
-require('module-alias/register');
-const path = require('path');
-const dotenv = require('dotenv');
+require('./init')();
+
 const express = require('express');
-const { dbConnect } = require('@m/init_mongo.js');
 const { accounts, receipts, purchases, items, categories, subcategories } = require('@m/mongo_models.js');
 const hash = require('./hash')
 const cors = require('cors');
 const dateConvert = require('./dateConvert.js');
-
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
-
-// Connect DB
-(async () => {
-    await dbConnect();
-})();
 
 const app = express();
 const PORT = process.env.PORT || 3001;

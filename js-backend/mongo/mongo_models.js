@@ -14,6 +14,7 @@ const accountSchema = new mongoose.Schema({
         },
         required: true,
         default: () => ({ purchases: [], categories: [] }),
+        _id: false
     },
 }, { strict: false });
 
