@@ -144,13 +144,16 @@ async def update_context(id: str):
 
 @app.get("/get-page-value")
 async def page_view(cat: str, date: str):
-    data = await mAPI.recent_categories(id_user, cat, date)
+    data_str = await mAPI.recent_categories(id_user, cat, date)
+
+    print(data_str)
+    data = json.loads(data_str) if isinstance(data_str, str) else data_str
 
     prices_graph = []
     for item in data["items"]:
-        prices_graph.append({"price": item.price})
+        prices_graph.append({"price": item["price"]})
 
-    return {"list": data.items, "total": data.total, "average": data.average, "prices_graph": data.prices_graph}
+    return {"list": data["items"], "total": data["total"], "average": data["average"], "prices_graph": prices_graph}
 
 @app.get("/screen-context")
 async def get_screen_view():
