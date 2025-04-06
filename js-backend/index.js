@@ -125,16 +125,16 @@ app.post('/receipt', async (req, res) => {
 
     const categoryUpdates = [];
     const subcategoryUpdates = [];
-    const categoryNames = Items.map(item => item.category);
-    const subcategoryNames = Items.map(item => item.subcategory);
+    const categoryNames = Items.map(item => item.Category);
+    const subcategoryNames = Items.map(item => item.SubCategory);
     const categoryDocs = await categories.find({ account: id, name: { $in: [...new Set(categoryNames)] } });
     const subcategoryDocs = await subcategories.find({ account: id, name: { $in: [...new Set(subcategoryNames)] } });
     const itemsToInsert = [];
 
     for (const item of Items ?? []) {
         // ok for item categories to be null
-        const category = categoryDocs.filter(category => category?.name == item.category)[0];
-        const subcategory = subcategoryDocs.filter(subcategory => subcategory?.name == item.subcategory)[0];
+        const category = categoryDocs.filter(category => category?.name == item.Category)[0];
+        const subcategory = subcategoryDocs.filter(subcategory => subcategory?.name == item.SubCategory)[0];
         const new_item = await new items({
             name: item.name,
             quantity: item.quantity,
