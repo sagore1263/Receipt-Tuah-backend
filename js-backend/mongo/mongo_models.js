@@ -11,9 +11,10 @@ const accountSchema = new mongoose.Schema({
         type: {
             purchases: { type: [mongoose.Schema.Types.ObjectId], ref: 'Purchase', required: true },
             categories: { type: [mongoose.Schema.Types.ObjectId], ref: 'Category', required: true },
+            subcategories: { type: [mongoose.Schema.Types.ObjectId], ref: 'Subcategory', required: true },
         },
         required: true,
-        default: () => ({ purchases: [], categories: [] }),
+        default: () => ({ purchases: [], categories: [], subcategories: [] }),
     },
 }, { strict: false });
 
@@ -42,6 +43,7 @@ const itemSchema = new mongoose.Schema({
     name: { type: String, default: null },
     quantity: { type: Number, default: defaultNumber },
     category: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', default: null },
+    subcategory: { type: mongoose.Schema.Types.ObjectId, ref: 'Subcategory', default: null },
     price: { type: Number, default: defaultNumber },
 }, { strict: false });
 

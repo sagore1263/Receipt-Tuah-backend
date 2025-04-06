@@ -4,7 +4,7 @@ const dotenv = require('dotenv');
 const express = require('express');
 const mongoose = require('mongoose');
 const { dbConnect } = require('@m/init_mongo.js');
-const { accounts, receipts, purchases, items, categories } = require('@m/mongo_models.js');
+const { accounts, receipts, purchases, items, categories, subcategories } = require('@m/mongo_models.js');
 const hash = require('./hash')
 const cors = require('cors');
 const dateConvert = require('./dateConvert.js');
@@ -103,7 +103,7 @@ app.post('/receipt', async (req, res) => {
         return res.status(400).json({ message: 'No purchase data provided' });
     }
     
-    const { Date, Time, Merchant, Location, Items, Category, Subcategory, Total, Tax, Other } = purchase.receipt;
+    const { Date, Time, Merchant, Location, Items, Total, Tax, Other } = purchase.receipt;
     const new_purchase = {};
     const receipt = await new receipts({
         data: purchase.imageBytes,
@@ -121,28 +121,41 @@ app.post('/receipt', async (req, res) => {
     const { _id } = await new purchases(new_purchase).save();
 
     const categoryUpdates = [];
+    const subcategoryUpdates = [];
     const categoryNames = Items.map(item => item.category);
+    const subcategoryNames = Items.map(item => item.subcategory);
     const categoryDocs = await categories.find({ name: { $in: [...new Set(categoryNames)] } });
+    const subcategoryDocs = await subcategories.find({ name: { $in: [...new Set(subcategoryNames)] } });
     const itemsToInsert = [];
 
     for (const item of Items) {
-        const category = categoryDocs.filter(category => category.name == item.category)[0];
+        // ok for item categories to be null
+        const category = categoryDocs.filter(category => category?.name == item.category)[0];
+        const subcategory = subcategoryDocs.filter(subcategory => subcategory?.name == item.subcategory)[0];
         const new_item = await new items({
             name: item.name,
             quantity: item.quantity,
             price: item.price,
-            category: category,
+            category: category?._id,
+            subcategory: subcategory?._id,
             purchase: _id
         }).save();
         categoryUpdates.push({
             updateOne: {
-                filter: { _id: category._id },
+                filter: { _id: category?._id },
+                update: { $push: { items: new_item._id } }
+            }
+        });
+        subcategoryUpdates.push({
+            updateOne: {
+                filter: { _id: subcategory?._id },
                 update: { $push: { items: new_item._id } }
             }
         });
         itemsToInsert.push(new_item._id);
     }
     await categories.bulkWrite(categoryUpdates);
+    await subcategories.bulkWrite(subcategoryUpdates);
     await purchases.findByIdAndUpdate(_id, { $push: { items: { $each: itemsToInsert } } });
 
     account.data.purchases.push(_id);
@@ -178,7 +191,7 @@ app.get('/userdata', async (req, res) => {
             path: 'items',
             select: 'name quantity price'
         }
-    }).select('settings data');
+    });
     console.log(`User data retrieved for account: ${id}`);
     res.status(200).json({ message: 'success', settings: settings, data: data });
 });
