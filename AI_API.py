@@ -7,6 +7,9 @@ from PIL import Image
 from google.genai import types
 
 from google.genai.types import Tool, GenerateContentConfig, GoogleSearch
+from mongo_API_calls import get_context_from_db
+
+MONGO_PORT = 3001
 
 import base64
 import io
@@ -29,9 +32,27 @@ def clear_chat():
     global chat
     chat = model.aio.chats.create(model = "gemini-2.5-pro-exp-03-25")
 
-async def generate_response(prompt, enable_search = False):
+
+async def generate_response(prompt, id_user, enable_search = False):
     global chat
     global model
+
+    db_context = await get_context_from_db(id_user)
+    print(db_context)
+
+    if db_context:
+        if isinstance(db_context, (dict, list)):
+            formatted_context = json.dumps(db_context, indent=2)
+        else:
+            formatted_context = db_context
+        prompt = f"""You are a helpful assistant helping a user with their finances.
+            User query: {prompt}
+
+            Context information from your database:
+            {formatted_context}
+
+            Please respond based on this context information."""
+
 
     if enable_search:
         response = await chat.send_message(prompt, 

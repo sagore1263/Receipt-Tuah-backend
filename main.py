@@ -18,11 +18,27 @@ app.add_middleware(
 )
 
 global enable_search
-enable_search = False 
+enable_search = False
+
+global id_user
+id_user=None
 
 @app.get("/")
 def home_view():
     return "Hello world"
+
+@app.get("/set-id")
+def set_id_view(id: str):
+    global id_user
+    id_user = id
+    return id_user
+
+@app.get("/clear-chat")
+def clear_chat_view(id: str):
+    global id_user
+    id_user = id
+    ai.clear_chat()
+    return "Chat cleared and id set to " + id_user
 
 @app.get("/enable-search")
 def enable_search_view():
@@ -38,7 +54,7 @@ def disable_search_view():
 
 @app.get("/ai")
 async def ai_speak(subject: str):
-    return await ai.generate_response(subject, enable_search)
+    return await ai.generate_response(subject, id_user, enable_search)
 
 @app.get("/ai-old")
 async def ai_view():
@@ -62,6 +78,12 @@ async def upload_image(file: UploadFile = File(...)):
     receipt = await ai.ai_image_to_dict(image)
     encoded_image = base64.b64encode(contents).decode("utf-8")
     return {"receipt": receipt, "imageBytes": encoded_image, "imageSize": image.size, "imageMode": image.mode}
+
+@app.get("/remake-image")
+async def remake_image():
+    pass
+    
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app)
