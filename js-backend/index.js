@@ -2,7 +2,6 @@ require('module-alias/register');
 const path = require('path');
 const dotenv = require('dotenv');
 const express = require('express');
-const mongoose = require('mongoose');
 const { dbConnect } = require('@m/init_mongo.js');
 const { accounts, receipts, purchases, items, categories, subcategories } = require('@m/mongo_models.js');
 const hash = require('./hash')
@@ -178,32 +177,53 @@ app.get('/userdata', async (req, res) => {
 
     await account.populate({
         path: 'data.purchases',
-        select: 'total date items receipt',
-        populate: {
-            path: 'items',
-            select: 'name quantity price'
-        }
-    });
-    const { settings, data } = await account.populate({
-        path: 'data.categories',
-        select: 'name items subcategories',
+        select: 'total date items receipt -_id',
         populate: [
             {
                 path: 'items',
-                select: 'name quantity price'
+                select: 'name quantity price -_id'
+            },
+            {
+                path: 'receipt',
+                select: 'data size mode -_id'
+            }
+        ]
+    });
+    const { settings, data } = await account.populate({
+        path: 'data.categories',
+        select: 'name items subcategories -_id',
+        populate: [
+            {
+                path: 'items',
+                select: 'name quantity price -_id'
             },
             {
                 path: 'subcategories',
                 select: 'name items',
                 populate: {
                     path: 'items',
-                    select: 'name quantity price'
+                    select: 'name quantity price -_id'
                 }
             }
         ]
     });
     console.log(`User data retrieved for account: ${id}`);
     res.status(200).json({ message: 'success', settings: settings, data: data });
+});
+
+app.get('/getreceipt', async (req, res) => {
+    const { id } = req.query;
+
+    console.log(`Receipt request for id: ${id}`);
+
+    const receipt = await receipts.findById(id);
+
+    if (!receipt) {
+        return res.status(400).json({ message: `Failed to find receipt with id ${id}` });
+    }
+
+    console.log(`Receipt retrieved for id: ${id}`);
+    res.status(200).json({ message: 'success', receipt: receipt });
 });
 
 app.listen(PORT, () => {

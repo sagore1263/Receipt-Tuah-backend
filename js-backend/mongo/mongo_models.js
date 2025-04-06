@@ -13,7 +13,7 @@ const accountSchema = new mongoose.Schema({
             categories: { type: [mongoose.Schema.Types.ObjectId], ref: 'Category', required: true },
         },
         required: true,
-        default: () => ({ purchases: [], categories: [], subcategories: [] }),
+        default: () => ({ purchases: [], categories: [] }),
     },
 }, { strict: false });
 
