@@ -433,7 +433,7 @@ app.get('/itemsBySubcategory', async (req, res) => {
     console.log(`Purchases by category for: ${id}`);
 
     const account = await accounts.findById(id);
-    const subcategoryDoc = await categories.findOne({ account: id, name: subcategory });
+    const subcategoryDoc = await subcategories.findOne({ account: id, name: subcategory });
 
     if (!account) {
         return res.status(400).json({ message: `Failed to find account with id ${id}` });
@@ -513,7 +513,7 @@ app.post('/setSettings', async (req, res) => {
  */
 app.get('/settings', async (req, res) => {
     const { id } = req.query;
-    
+
     const account = await accounts.findById(id);
 
     if (!account) {
