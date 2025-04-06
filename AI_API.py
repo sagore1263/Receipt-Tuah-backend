@@ -10,15 +10,10 @@ from google.genai.types import Tool, GenerateContentConfig, GoogleSearch
 from mongo_API_calls import get_context_from_db
 
 
-import base64
-import io
-import base64
-import io
 
 MONGO_PORT = 3001
 
 load_dotenv()
-print(os.getenv("API_KEY"))
 global model
 model = genai.Client(api_key=os.getenv("API_KEY"))
 
