@@ -6,7 +6,7 @@ const accountSchema = new mongoose.Schema({
     // username: { type: String, default: null },
     password: { type: String, default: null },
     // auth_token: { type: String, default: null },
-    settings: Schema.Types.Mixed,
+    settings: mongoose.Schema.Types.Mixed,
     data: {
         type: {
             purchases: { type: [mongoose.Schema.Types.ObjectId], ref: 'Purchase', required: true },

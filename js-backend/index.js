@@ -125,9 +125,11 @@ app.post('/receipt', async (req, res) => {
             name: item.name,
             quantity: item.quantity,
             price: item.price,
-            category: item.category,
+            category: category,
             purchase: _id
         }).save();
+        category.items.push(new_item._id);
+        await category.save();
         new_purchase.items.push(new_item._id);
     }
 
