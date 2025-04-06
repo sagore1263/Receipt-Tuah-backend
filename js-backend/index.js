@@ -267,7 +267,7 @@ app.get('/purchasesBeforeDate', async (req, res) => {
  * Get purchases between 2 dates, inclusive
  */
 app.get('/purchasesBetweenDates', async (req, res) => {
-    const { id, date1, date2 } = req.query;
+    const { id, date1, date2, image } = req.query;
 
     console.log(`Purchases between dates for: ${id}`);
     let unixdate1;
@@ -285,7 +285,7 @@ app.get('/purchasesBetweenDates', async (req, res) => {
         return res.status(400).json({ message: `Failed to find account with id ${id}` });
     }
 
-    const result = await purchases.find({ account: id, date: { $gt: unixdate1, $lt: unixdate2 } }).lean().populate(purchasePopulate);
+    const result = await purchases.find({ account: id, date: { $gt: unixdate1, $lt: unixdate2 } }).lean().populate(image ? purchasePopulateImage : purchasePopulate);
 
     res.status(200).json({ message: 'success', purchases: result });
 });
@@ -293,7 +293,7 @@ app.get('/purchasesBetweenDates', async (req, res) => {
  * Get purchases after date, exclusive
  */
 app.get('/purchasesAfterDate', async (req, res) => {
-    const { id, date } = req.query;
+    const { id, date, image } = req.query;
 
     console.log(`Purchases after date for: ${id}`);
 
@@ -310,7 +310,7 @@ app.get('/purchasesAfterDate', async (req, res) => {
         return res.status(400).json({ message: `Failed to find account with id ${id}` });
     }
 
-    const result = await purchases.find({ account: id, date: { $gt: unixdate } }).lean().populate(purchasePopulate);
+    const result = await purchases.find({ account: id, date: { $gt: unixdate } }).lean().populate(image ? purchasePopulateImage : purchasePopulate);
 
     res.status(200).json({ message: 'success', purchases: result });
 });
@@ -319,7 +319,7 @@ app.get('/purchasesAfterDate', async (req, res) => {
  * Get purchases within X days
  */
 app.get('/recentPurchases', async (req, res) => {
-    const { id, days } = req.query;
+    const { id, days, image } = req.query;
 
     console.log(`Recent purchases for: ${id}`);
 
@@ -335,7 +335,7 @@ app.get('/recentPurchases', async (req, res) => {
 
     const unixdate = Date.now() - (Number(days) * ONE_DAY);
 
-    const result = await purchases.find({ account: id, date: { $gt: unixdate } }).lean().populate(purchasePopulate);
+    const result = await purchases.find({ account: id, date: { $gt: unixdate } }).lean().populate(image ? purchasePopulateImage : purchasePopulate);
 
     res.status(200).json({ message: 'success', purchases: result });
 });
@@ -370,29 +370,25 @@ app.get('/itemsByCategory', async (req, res) => {
 });
 
 /**
- * Get items by category
+ * Get items by subcategory
  */
-app.get('/itemsByCategory', async (req, res) => {
-    const { id, category } = req.query;
+app.get('/itemsBySubcategory', async (req, res) => {
+    const { id, subcategory } = req.query;
 
     console.log(`Purchases by category for: ${id}`);
 
     const account = await accounts.findById(id);
-    const categoryDoc = await categories.findOne({ account: id, name: category });
+    const subcategoryDoc = await categories.findOne({ account: id, name: subcategory });
 
     if (!account) {
         return res.status(400).json({ message: `Failed to find account with id ${id}` });
-    } else if (!categoryDoc) {
-        return res.status(400).json({ message: `Category ${category} does not exist` });
+    } else if (!subcategoryDoc) {
+        return res.status(400).json({ message: `Subcategory ${subcategory} does not exist` });
     }
 
-    const result = await categoryDoc.populate({
+    const result = await subcategoryDoc.populate({
         path: 'items',
-        select: 'name quantity subcategory purchase price -_id',
-        populate: {
-            path: 'subcategory',
-            select: 'name -_id',
-        }
+        select: 'name quantity purchase price -_id',
     });
 
     res.status(200).json({ message: 'success', items: result.items });
