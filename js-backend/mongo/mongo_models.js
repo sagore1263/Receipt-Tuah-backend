@@ -40,7 +40,7 @@ const receiptSchema = new mongoose.Schema({
 const itemSchema = new mongoose.Schema({
     purchase: { type: mongoose.Schema.Types.ObjectId, ref: 'Purchase', required: true },
     name: { type: String, required: true },
-    quantity: { type: Number, default: 1, required: true },
+    quantity: { type: Number, default: 1 },
     category: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', default: null },
     subcategory: { type: mongoose.Schema.Types.ObjectId, ref: 'Subcategory', default: null },
     price: { type: Number, required: true },

@@ -350,7 +350,7 @@ app.get('/itemsByCategory', async (req, res) => {
         return res.status(400).json({ message: `Category ${category} does not exist` });
     }
 
-    const result = await items.aggregate([
+    let result = await items.aggregate([
         {
           $lookup: {
             from: 'categories',
@@ -362,6 +362,7 @@ app.get('/itemsByCategory', async (req, res) => {
         { $unwind: '$category' },
         { $match: { 'category.name': category, 'category.account': id } }
     ]);
+    // result = await result.populate();
 
     res.status(200).json({ message: 'success', items: result });
 });
