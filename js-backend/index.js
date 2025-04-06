@@ -99,8 +99,8 @@ app.post('/receipt', async (req, res) => {
 
     if (!account) {
         return res.status(400).json({ message: `Failed to find account with id ${id}` });
-    } else if (!receipt) {
-        return res.status(400).json({ message: 'No receipt data provided' });
+    } else if (!purchase) {
+        return res.status(400).json({ message: 'No purchase data provided' });
     }
     
     const { Date, Time, Merchant, Location, Items, Category, Subcategory, Total, Tax, Other } = purchase.receipt;
@@ -119,8 +119,14 @@ app.post('/receipt', async (req, res) => {
     new_purchase.account = id;
     new_purchase.items = [];
     const { _id } = await new purchases(new_purchase).save();
+
+    const categoryUpdates = [];
+    const categoryNames = Items.map(item => item.category);
+    const categoryDocs = await categories.find({ name: { $in: [...new Set(categoryNames)] } });
+    const itemsToInsert = [];
+
     for (const item of Items) {
-        const category = await categories.findOne({ name: item.category });
+        const category = categoryDocs.filter(category => category.name == item.category)[0];
         const new_item = await new items({
             name: item.name,
             quantity: item.quantity,
@@ -128,12 +134,19 @@ app.post('/receipt', async (req, res) => {
             category: category,
             purchase: _id
         }).save();
-        category.items.push(new_item._id);
-        await category.save();
-        new_purchase.items.push(new_item._id);
+        categoryUpdates.push({
+            updateOne: {
+                filter: { _id: category._id },
+                update: { $push: { items: new_item._id } }
+            }
+        });
+        itemsToInsert.push(new_item._id);
     }
+    await categories.bulkWrite(categoryUpdates);
+    await purchases.findByIdAndUpdate(_id, { $push: { items: { $each: itemsToInsert } } });
 
-    // await account.save();
+    account.data.purchases.push(_id);
+    await account.save();
 
     console.log(`Receipt uploaded for account: ${id}`);
     res.status(200).json({ message: 'success', accountId: account._id });
