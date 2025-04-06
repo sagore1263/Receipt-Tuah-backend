@@ -7,11 +7,24 @@ import json
 from PIL import Image
 import io
 import base64
+from dotenv import load_dotenv
+
+load_dotenv()
 app = FastAPI()
 
+
+origins = [
+    "http://localhost:3000",   # React dev server
+    "http://127.0.0.1:3000",   # Optional, just in case
+    "http://localhost:8000",   # FastAPI dev server
+    "http://localhost:3001",   # React dev server
+    "http://127.0.0.1:3001",
+    "http://localhost:3002",
+    "http://127.0.0.1:3002"
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # For development only
+    allow_origins=origins,  # For development only
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

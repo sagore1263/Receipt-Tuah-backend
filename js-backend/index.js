@@ -7,10 +7,10 @@ const cors = require('cors');
 const dateConvert = require('./dateConvert.js');
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.MONGO_PORT || 3001;
 
 app.use(cors({
-    origin: 'http://localhost:3000', // Your React app's URL
+    origin: '*', // Your React app's URL
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true
