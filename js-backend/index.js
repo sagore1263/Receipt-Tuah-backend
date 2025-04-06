@@ -163,14 +163,15 @@ app.get('/userdata', async (req, res) => {
         return res.status(400).json({ message: `Failed to find account with id ${id}` });
     }
 
-    const { settings, data } = account.populate({
+    await account.populate({
         path: 'data.purchases',
         select: 'total date items receipt',
         populate: {
             path: 'items',
             select: 'name quantity price'
         }
-    }).popualte({
+    });
+    const { settings, data } = await account.populate({
         path: 'data.categories',
         select: 'name items subcategories',
         populate: {

@@ -32,7 +32,7 @@ const purchaseSchema = new mongoose.Schema({
 // Receipt
 const receiptSchema = new mongoose.Schema({
     data: { type: Buffer, default: null },
-    size: { type: Number, default: defaultNumber },
+    size: { type: [Number], min: [2, 'Receipt image size must be 2D'], max: [2, 'Receipt image size must be 2D'], default: () => [0, 0] },
     mode: { type: String, default: null },
 });
 
@@ -67,6 +67,7 @@ const Purchase = mongoose.model('Purchase', purchaseSchema);
 const Item = mongoose.model('Item', itemSchema);
 const Category = mongoose.model('Category', categorySchema);
 const Receipt = mongoose.model('Receipt', receiptSchema);
+const Subcategory = mongoose.model('Subcategory', subcategorySchema);
 // const Global = mongoose.model('Global', globalSchema);
 
 module.exports = {
@@ -74,6 +75,7 @@ module.exports = {
     purchases: Purchase,
     items: Item,
     categories: Category,
+    subcategories: Subcategory,
     receipts: Receipt,
     // global: Global,
 };
