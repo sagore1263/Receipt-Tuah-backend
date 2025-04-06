@@ -144,6 +144,8 @@ async def update_context(id: str):
 
 @app.get("/get-page-value")
 async def page_view(cat: str, date: str):
+    if not id_user or id_user == "":
+        return "Invalid User ID"
     data = await mAPI.recent_categories(id_user, cat, date)
 
     prices_graph = []
@@ -151,7 +153,16 @@ async def page_view(cat: str, date: str):
         prices_graph.append({"price": item.price})
 
     return {"list": data.items, "total": data.total, "average": data.average, "prices_graph": data.prices_graph}
-
+@app.get("/get-recent-receipts")
+async def get_recent_receipts():
+    if not id_user or id_user == "":
+        return "Invalid User ID"
+    data = await mAPI.get_recent_receipts(id_user)
+    if not data:
+        return None
+    receipts = []
+    for receipt in data['purchases']:
+        receipts.append([receipt['date'], receipt['merchant'], receipt['total'], receipt['id']])
 @app.get("/screen-context")
 async def get_screen_view():
     return await ai.get_screen_context(page_view())
