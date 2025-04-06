@@ -3,6 +3,8 @@ import './App.css';
 import ChatAssistant from './ChatAssistant';
 import { login, signup } from './AuthService';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import Webcam from 'react-webcam';
+import { useRef } from 'react';
 
 const Login = ({ onLogin }) => {
   const [isLogin, setIsLogin] = useState(true);
@@ -72,14 +74,38 @@ const App = () => {
   const [receipts, setReceipts] = useState([]);
   const COLORS = ["#8884d8", "#8dd1e1", "#82ca9d", "#a4de6c", "#d0ed57", "#ffc658"];
   const [categoryData, setCategoryData] = useState([]);
-  const [userId, setUserId] = useState('');
-  const [chartLoading, setChartLoading] = useState(true);
-  const [chartError, setChartError] = useState(null);
-  const [chartRefreshTrigger, setChartRefreshTrigger] = useState(0);
-  const [viewingSubcategories, setViewingSubcategories] = useState(false);
-  const [subcategoryData, setSubcategoryData] = useState([]);
-  const [subcategoryLoading, setSubcategoryLoading] = useState(false);
-  const [currentCategory, setCurrentCategory] = useState(null);
+const [userId, setUserId] = useState('');
+const [chartLoading, setChartLoading] = useState(true);
+const [chartError, setChartError] = useState(null);
+const [chartRefreshTrigger, setChartRefreshTrigger] = useState(0);
+const [useLocation, setUseLocation] = useState(
+  sessionStorage.getItem('useLocation') === 'true'
+);
+const [location, setLocation] = useState(
+  sessionStorage.getItem('userLocation') || ''
+);
+const [locationStatus, setLocationStatus] = useState('');
+const [selectedCategory, setSelectedCategory] = useState(null);
+const webRef = useRef(null);
+  const showImage = () => {
+    const file = webRef.current.getScreenshot();
+    console.log(file);
+
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("email", username);
+  
+        fetch('http://localhost:8000/upload-image', {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'Authorization': `Bearer ${sessionStorage.getItem('token')}`
+          }
+        }).then(response => {
+          if (!response.ok) throw new Error('Upload failed');
+          return response.json();
+        }).catch(error => console.error('Upload error:', error));
+  };
 
   useEffect(() => {
     if (userId) {
@@ -383,9 +409,6 @@ const App = () => {
             <h2>{children}</h2>
             <p>Welcome, {username}</p>
           </div>
-          <button onClick={handleLogout} className="logout-button">
-            Logout
-          </button>
         </div>
   
         {/* Analytics Section */}
@@ -461,6 +484,8 @@ const App = () => {
           <label htmlFor="upload-input" className="upload-button">
             Upload image
           </label>
+          <Webcam ref={webRef} />
+          <button onClick={() => {showImage();}} className="capture-button">Capture</button>
           <div className="image-preview-container">
             {images.map((image, index) => (
               <div key={index} className="image-preview">
@@ -491,19 +516,79 @@ const App = () => {
   return (
     <div className="app-container">
       <div className="sidebar">
-        <h1 className="logo">Receipt Tuah</h1>
+        <h1 className="logo">Expense Expert</h1>
         <h2 className="sidebar-title">Records</h2>
         <div className="tabs-container">
           <TabButton name="Home" label="Home" />
           <TabButton name="TabX" label="Tabx" />
-          <TabButton name="TabY" label="Taby" />
-          <TabButton name="TabZ" label="Tabz" />
+          <TabButton name="History" label="History" />
+          <TabButton name="Settings" label="Settings" />
         </div>
       </div>
       {activeTab === 'Home' && <TabContent>Home</TabContent>}
       {activeTab === 'TabX' && <TabContent>Tab X Content</TabContent>}
-      {activeTab === 'TabY' && <TabContent>Tab Y Content</TabContent>}
-      {activeTab === 'TabZ' && <TabContent>Tab Z Content</TabContent>}
+      {activeTab === 'History' && <TabContent>Tab Y Content</TabContent>}
+      {activeTab === 'Settings' && (
+  <div className="content-area">
+    <div className="header-row">
+      <div className="user-greeting">
+        <h2>Settings</h2>
+        <p>Account Preferences</p>
+      </div>
+    </div>
+    
+    <div className="settings-container">
+      <div className="setting-group">
+        <label className="location-toggle">
+          <input
+            type="checkbox"
+            checked={useLocation}
+            onChange={(e) => {
+              setUseLocation(e.target.checked);
+              sessionStorage.setItem('useLocation', e.target.checked);
+              if (!e.target.checked) setLocation('');
+            }}
+          />
+          <span>I want answers based on my location</span>
+        </label>
+        
+        {useLocation && (
+          <div className="location-input-group">
+            <input
+              type="text"
+              placeholder="Enter your location"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              className="location-input"
+            />
+            <button
+              onClick={handleLocationSubmit}
+              className="location-submit-button"
+            >
+              Save Location
+            </button>
+          </div>
+        )}
+        
+        {locationStatus && (
+          <div className={`location-status ${locationStatus.includes('Error') ? 'error' : 'success'}`}>
+            {locationStatus}
+          </div>
+        )}
+      </div>
+      
+      <div className="setting-group">
+        <h3>Account Actions</h3>
+        <button 
+          onClick={handleLogout} 
+          className="logout-button settings-logout"
+        >
+          Logout
+        </button>
+      </div>
+    </div>
+  </div>
+)}
       <ChatAssistant />
     </div>
   );
