@@ -114,7 +114,7 @@ async def get_category_pie_chart(id: str):
         if items['total'] > 0:
             data[category] = items['total']
     
-    get_screen_view(data)
+    await get_screen_view(data)
 
     return data
 subcategories = {
@@ -138,7 +138,7 @@ async def get_subcategory_pie_chart(id: str, category: str):
         if items['total'] > 0:
             data[subcategory] = items['total']
     
-    get_screen_view(data)
+    await get_screen_view(data)
     return data
     
 @app.get("/update-context")
@@ -164,7 +164,7 @@ async def page_view(cat: str, date: str):
         counts[item["name"]] = {"price": counts.get(item["name"], 0) + item["price"], "quantity": counts.get(item["name"], 0) + item["quantity"]}
         item_names.add(item["name"])
 
-    get_screen_view({"list": data["items"], 
+    await get_screen_view({"list": data["items"], 
             "total": data["total"], 
             "average": data["average"], 
             "prices_graph": prices_graph,
