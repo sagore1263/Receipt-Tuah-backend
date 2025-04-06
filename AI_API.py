@@ -10,6 +10,8 @@ from google.genai.types import Tool, GenerateContentConfig, GoogleSearch
 
 import base64
 import io
+import base64
+import io
 load_dotenv()
 
 global model
