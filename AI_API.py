@@ -34,13 +34,13 @@ async def get_screen_context(page_view):
         global chat
         global model
         global has_context
-
-        if page_view:
-            prompt = f"""The screen currently displays the information to the user: {page_view}."""
-            await chat.send_message(prompt)
-            has_context = True
-        else:
-            return "No context found for this user."
+        return
+        # if page_view:
+        #     prompt = f"""The screen currently displays the information to the user: {page_view}."""
+        #     await chat.send_message(prompt)
+        #     has_context = True
+        # else:
+        #     return "No context found for this user."
 
 def remove__id_from_dict(db_context):
     if isinstance(db_context, dict):

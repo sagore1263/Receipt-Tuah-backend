@@ -1,5 +1,5 @@
 // Create a new component ChatAssistant.js
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import './App';
 
 const ChatAssistant = () => {
@@ -7,8 +7,36 @@ const ChatAssistant = () => {
   const [message, setMessage] = useState('');
   const [conversation, setConversation] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [searchEnabled, setSearchEnabled] = useState(false); // Add search toggle state
+  const messagesEndRef = useRef(null);
   const API_KEY = 'AIzaSyCaAEMD3UyCQEPwEaRL6cQwR3bc5kwgWzk';
   const API_URL = 'http://127.0.0.1:8000/ai';
+
+  // Auto-scroll function
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [conversation]);
+
+  // Toggle search function
+  const toggleSearch = async () => {
+    try {
+      const endpoint = searchEnabled ? 'disable-search' : 'enable-search';
+      const response = await fetch(`http://localhost:8000/${endpoint}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        setSearchEnabled(!searchEnabled);
+      } else {
+        console.error('Failed to toggle search');
+      }
+    } catch (error) {
+      console.error('Error toggling search:', error);
+    }
+  };
 
   const handleSend = async () => {
     if (!message.trim() || loading) return;
@@ -71,29 +99,25 @@ const ChatAssistant = () => {
           </div>
           
           <div className="chat-messages">
-          {conversation.map((msg, index) => (
-    <div key={index} className={`message ${msg.type}`}>
-      {msg.type === 'user' && (
-        <div className="user-msg">{msg.content}</div>
-      )}
-      {msg.type === 'response' && (
-        <div className="response-msg">
-          <div className="ai-response-text">
-            {/* Display just the content body */}
-            {msg.content.body}
-          </div>
-          {/* Optional: Display headers in debug view */}
-          {/* <div className="debug-headers">
-            <pre>{JSON.stringify(msg.content.headers, null, 2)}</pre>
-          </div> */}
-        </div>
-      )}
-      {msg.type === 'error' && (
-        <div className="error-msg">{msg.content}</div>
-      )}
-    </div>
-  ))}
+            {conversation.map((msg, index) => (
+              <div key={index} className={`message ${msg.type}`}>
+                {msg.type === 'user' && (
+                  <div className="user-msg">{msg.content}</div>
+                )}
+                {msg.type === 'response' && (
+                  <div className="response-msg">
+                    <div className="ai-response-text">
+                      {msg.content.body}
+                    </div>
+                  </div>
+                )}
+                {msg.type === 'error' && (
+                  <div className="error-msg">{msg.content}</div>
+                )}
+              </div>
+            ))}
             {loading && <div className="loading">Loading...</div>}
+            <div ref={messagesEndRef} />
           </div>
           
           <div className="chat-input">
@@ -104,7 +128,18 @@ const ChatAssistant = () => {
               onKeyPress={(e) => e.key === 'Enter' && handleSend()}
               placeholder="Type your message..."
             />
-            <button onClick={handleSend} disabled={loading}>
+            <button 
+              className={`search-toggle ${searchEnabled ? 'enabled' : 'disabled'}`}
+              onClick={toggleSearch}
+              disabled={loading}
+              title={searchEnabled ? "Disable Search" : "Enable Search"}
+            >
+              🔍
+            </button>
+            <button 
+              onClick={handleSend} 
+              disabled={loading}
+            >
               Send
             </button>
           </div>
