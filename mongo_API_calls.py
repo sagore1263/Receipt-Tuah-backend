@@ -78,11 +78,11 @@ async def get_subcategory_items(id_user, subcategory):
                 error_text = await response.text()
                 print(f"Server error {response.status}: {error_text[:100]}...")
                 return f"Error retrieving data (Status: {response.status})"
-async def get_recent_receipts(id_user):
+async def get_recent_receipts(id_user, days):
     if not id_user or id_user == "":
         return "Invalid User ID"
     async with aiohttp.ClientSession() as session:
-        url = f"{DB_HOST}/getPurchases?id={id_user}&num=30"
+        url = f"{DB_HOST}/getPurchases?id={id_user}&num={days}"
         print(f"Making request to: {url}")
         async with session.get(url) as response:
             if response.status == 200:

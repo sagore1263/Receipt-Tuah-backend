@@ -86,6 +86,8 @@ const [location, setLocation] = useState(
 );
 const [locationStatus, setLocationStatus] = useState('');
 const [selectedCategory, setSelectedCategory] = useState(null);
+const [days, setDays] = useState(0);
+const [isLoading, setIsLoading] = useState(false);
 const webRef = useRef(null);
   const showImage = () => {
     const file = webRef.current.getScreenshot();
@@ -336,6 +338,31 @@ useEffect(() => {
     });
   };
 
+  const fetchRecentReceipts = async () => {
+    if (days <= 0) return;
+    
+    setIsLoading(true);
+    try {
+      const response = await fetch(`http://localhost:8000/get-recent-receipts?days=${days}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch receipts');
+      }
+      
+      const data = await response.json();
+      console.log(data)
+      setReceipts(data);
+    } catch (error) {
+      console.error('Error fetching receipts:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
   const TabButton = ({ name, label }) => (
     <button 
       className={`tab-button ${activeTab === name ? 'active' : ''}`}
@@ -487,7 +514,47 @@ useEffect(() => {
       </div>
       {activeTab === 'Home' && <TabContent>Home</TabContent>}
       {activeTab === 'TabX' && <TabContent>Tab X Content</TabContent>}
-      {activeTab === 'History' && <TabContent>Tab Y Content</TabContent>}
+      {activeTab === 'History' && (
+        <div className="content-area">
+          <div className="header-row">
+            <div className="user-greeting">
+              <h2>History</h2>
+              <p>Recent Receipts</p>
+            </div>
+            <div className="days-input-container">
+              <input
+                type="number"
+                placeholder="Days"
+                value={days}
+                onChange={(e) => setDays(e.target.value)}
+                className="days-input"
+              />
+              <button 
+                onClick={fetchRecentReceipts} 
+                className="fetch-button"
+              >
+                Fetch Receipts
+              </button>
+            </div>
+          </div>
+          
+          {isLoading ? (
+            <div className="loading-message">Loading receipts...</div>
+          ) : (
+            <div className="receipts-list">
+              {receipts.map((receipt, index) => (
+                <div key={index} className="receipt-card">
+                  <h3>{receipt.Merchant}</h3>
+                  <p>Date: {receipt.Date}</p>
+                  <p>Total: ${receipt.Total}</p>
+                  <p>Category: {receipt.Category}</p>
+                  {/* Add more receipt details as needed */}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
       {activeTab === 'Settings' && (
   <div className="content-area">
     <div className="header-row">
