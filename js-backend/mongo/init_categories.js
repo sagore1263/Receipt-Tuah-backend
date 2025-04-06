@@ -74,6 +74,11 @@ async function initCategories(accountId) {
         });
     }
 
+    // Update categories with new subcategories
+    if (categoryUpdates.length > 0) {
+        await categories.bulkWrite(categoryUpdates);
+    }
+
 }
 
 module.exports = initCategories;

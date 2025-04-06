@@ -13,11 +13,18 @@ const PORT = process.env.MONGO_PORT || 3001;
 const purchasePopulate = [
     {
         path: 'items',
-        select: '-purchase -__v'
+        select: '-purchase -__v -_id'
+    }
+];
+
+const purchasePopulateImage = [
+    {
+        path: 'items',
+        select: '-purchase -__v -_id'
     },
     {
         path: 'receipt',
-        select: '-__v'
+        select: '-__v -_id'
     }
 ];
 
@@ -172,7 +179,7 @@ app.post('/receipt', async (req, res) => {
  * Return fully populated user data
  */
 app.get('/userdata', async (req, res) => {
-    const { id } = req.query;
+    const { id, image } = req.query;
 
     console.log(`User data request for id: ${id}`);
 
@@ -186,23 +193,23 @@ app.get('/userdata', async (req, res) => {
     const { settings, data } = await account.populate([
         {
             path: 'data.purchases',
-            select: '-account -__v',
-            populate: purchasePopulate
+            select: '-account -__v -_id',
+            populate: image ? purchasePopulateImage : purchasePopulate
         },
         {
             path: 'data.categories',
-            select: '-account -__v',
+            select: '-account -__v -_id',
             populate: [
                 {
                     path: 'items',
-                    select: 'name purchase quantity price'
+                    select: 'name purchase quantity price -_id'
                 },
                 {
                     path: 'subcategories',
-                    select: 'name items',
+                    select: 'name items -_id',
                     populate: {
                         path: 'items',
-                        select: 'name purchase quantity price'
+                        select: 'name purchase quantity price -_id'
                     }
                 }
             ]
@@ -213,7 +220,7 @@ app.get('/userdata', async (req, res) => {
 });
 
 /**
- * Get receipt by id, deprecated
+ * Get receipt by id
  */
 app.get('/getreceipt', async (req, res) => {
     const { id } = req.query;
@@ -235,7 +242,7 @@ const ONE_DAY = 86400000;
  * Get purchases before date, exclusive
  */
 app.get('/purchasesBeforeDate', async (req, res) => {
-    const { id, date } = req.query;
+    const { id, date, image } = req.query;
 
     console.log(`Purchases before date for: ${id}`);
 
@@ -252,7 +259,7 @@ app.get('/purchasesBeforeDate', async (req, res) => {
         return res.status(400).json({ message: `Failed to find account with id ${id}` });
     }
 
-    const result = await purchases.find({ account: id, date: { $lt: unixdate } }).lean().populate(purchasePopulate);
+    const result = await purchases.find({ account: id, date: { $lt: unixdate } }).lean().populate(image ? purchasePopulateImage : purchasePopulate);
 
     res.status(200).json({ message: 'success', purchases: result });
 });
@@ -352,10 +359,39 @@ app.get('/itemsByCategory', async (req, res) => {
 
     const result = await categoryDoc.populate({
         path: 'items',
-        select: 'name quantity subcategory purchase price',
+        select: 'name quantity subcategory purchase price -_id',
         populate: {
             path: 'subcategory',
-            select: 'name',
+            select: 'name -_id',
+        }
+    });
+
+    res.status(200).json({ message: 'success', items: result.items });
+});
+
+/**
+ * Get items by category
+ */
+app.get('/itemsByCategory', async (req, res) => {
+    const { id, category } = req.query;
+
+    console.log(`Purchases by category for: ${id}`);
+
+    const account = await accounts.findById(id);
+    const categoryDoc = await categories.findOne({ account: id, name: category });
+
+    if (!account) {
+        return res.status(400).json({ message: `Failed to find account with id ${id}` });
+    } else if (!categoryDoc) {
+        return res.status(400).json({ message: `Category ${category} does not exist` });
+    }
+
+    const result = await categoryDoc.populate({
+        path: 'items',
+        select: 'name quantity subcategory purchase price -_id',
+        populate: {
+            path: 'subcategory',
+            select: 'name -_id',
         }
     });
 
