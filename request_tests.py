@@ -4,7 +4,7 @@ import requests
 url = "http://127.0.0.1:8000/upload-image/"
 
 # Path to your test image
-image_path = "receipt.jpg"
+image_path = "receipts/lepeep.jpg"
 
 with open(image_path, "rb") as img_file:
     files = {"file": ("receipt.jpg", img_file, "image/jpeg")}

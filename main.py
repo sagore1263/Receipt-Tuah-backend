@@ -33,8 +33,8 @@ app.add_middleware(
 global enable_search
 enable_search = False
 
-global id_user
-id_user=None
+global id_user 
+id_user= "67f21bb8b386c742b3e13a82"
 
 @app.get("/")
 def home_view():
@@ -90,12 +90,8 @@ async def upload_image(file: UploadFile = File(...)):
     # Do your image processing here
     receipt = await ai.ai_image_to_dict(image)
     encoded_image = base64.b64encode(contents).decode("utf-8")
-    return {"receipt": receipt, "imageBytes": encoded_image, "imageSize": image.size, "imageMode": image.mode}
-
-@app.get("/remake-image")
-async def remake_image():
-    pass
-    
+    mime_type = Image.MIME.get(image.format, "image/png")  # fallback
+    return {"receipt": receipt, "mimeType": mime_type}
 
 if __name__ == "__main__":
     import uvicorn

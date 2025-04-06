@@ -5,15 +5,14 @@ import json
 import str_format as sf
 from PIL import Image
 from google.genai import types
-
 from google.genai.types import Tool, GenerateContentConfig, GoogleSearch
 from mongo_API_calls import get_context_from_db
 
 
-
-MONGO_PORT = 3001
-
 load_dotenv()
+MONGO_PORT = os.getenv("MONGO_PORT")
+global has_context
+has_context = False
 global model
 model = genai.Client(api_key=os.getenv("API_KEY"))
 
@@ -28,6 +27,8 @@ google_search_tool = Tool(
 def clear_chat():
     global chat
     chat = model.aio.chats.create(model = "gemini-2.5-pro-exp-03-25")
+    global has_context
+    has_context = False
 
 def remove__id_from_dict(db_context):
     if isinstance(db_context, dict):
@@ -48,26 +49,32 @@ def remove__id_from_dict(db_context):
     
     return formatted_context
 
+async def set_user_context(id_user):
+        global chat
+        global model
+        global has_context
+        if (not id_user) :
+            return "Error"
+        db_context = await get_context_from_db(id_user)
 
+        if db_context:
+            
+            formatted_context = remove__id_from_dict(db_context)
+
+            prompt = f"""You are a helpful assistant helping a user with their finances.
+                You have access to the following purchase data from the user:
+                {formatted_context}
+
+                Please respond to the following prompts based on this context information."""
+            await chat.send_message(prompt)
+            has_context = True
+        else:
+            return "No context found for this user."
 async def generate_response(prompt, id_user, enable_search = False):
     global chat
     global model
-
-    db_context = await get_context_from_db(id_user)
-
-    if db_context:
-        
-        formatted_context = remove__id_from_dict(db_context)
-
-        prompt = f"""You are a helpful assistant helping a user with their finances.
-            User query: {prompt}
-
-            Context information from your database:
-            {formatted_context}
-
-            Please respond based on this context information."""
-
-
+    if (not has_context and id_user) :
+        await set_user_context(id_user)
     if enable_search:
         response = await chat.send_message(prompt, 
             config=types.GenerateContentConfig(
@@ -101,18 +108,17 @@ async def convert_image_to_text(path):
     return response.text
 dict_prompt = """Convert this receipt text into a dictionary. Use the following format - 
 Date : (DD/MM/YYYY), Time : (HH:MM), Merchant : (merchant), Location : (location), Items : [{name : (ex : burger, onion, etc.), quantity : (int - optional), price : ($), Category : (see below), Sub-Category : (see below)}] , Total : (total), Tax : (tax), Other : {json}
-If some of the fields are not available, just leave them blank. Put any field not listed in the "Other" field.
+If some of the fields are not available, just leave them blank. Put any field not listed in the "Other" field. If there are no items create an item with the same name as the merchant and add price and category.
 Just output the dictionary and nothing else.
 
 List of categories and subcateogries:
-Food: Groceries, Restaurants, Fast Food, Alcohol, Delivery, Other
-Housing: Rent/Mortgage, Electricity, Internet, Other 
+Food: Groceries, Restaurants, Fast Food, Alcohol, Delivery
+Housing: Rent/Mortgage, Electricity, Internet
 Transportation: Fuel, Public Transit, Taxi
 Shopping: Clothing, Electronics, Furniture, Other
 Entertainment: Streaming, Events, Video Games, Movies, Subscriptions
-Financial: Income, Credit Card Payments
 Personal Care: Haircuts, Skincare & Makeup, Hygiene Products, Spa & Massage
-Miscellaneous: Uncategorized, Cash Withdrawal, Other
+Miscellaneous: Uncategorized, Cash Withdrawal
 """
 
 
