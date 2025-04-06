@@ -229,8 +229,13 @@ app.get('/getreceipt', async (req, res) => {
         return res.status(400).json({ message: `Failed to find receipt with id ${id}` });
     }
 
+    const receiptData = {
+        mimeType: receipt.mimeType,
+        data: receipt.data.toString('base64') // Convert Buffer to base64 string
+    };
+
     console.log(`Receipt retrieved for id: ${id}`);
-    res.status(200).json({ message: 'success', receipt: receipt });
+    res.status(200).json({ message: 'success', receipt: receiptData });
 });
 
 const ONE_DAY = 86400000;
