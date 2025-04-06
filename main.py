@@ -91,7 +91,7 @@ async def upload_image(file: UploadFile = File(...)):
     receipt = await ai.ai_image_to_dict(image)
     encoded_image = base64.b64encode(contents).decode("utf-8")
     mime_type = Image.MIME.get(image.format, "image/png")  # fallback
-    return {"receipt": receipt, "mimeType": mime_type}
+    return {"receipt": receipt, "imageBytes" : encoded_image, "mimeType": mime_type}
 
 if __name__ == "__main__":
     import uvicorn
