@@ -121,9 +121,19 @@ async def update_context(id: str):
         return None
     ai.set_user_context(id_user)
 
-# @app.get("/get-page-value")
-# async def page_view(cat: str):
+@app.get("/get-page-value")
+async def page_view(cat: str, date: str):
+    data = await mAPI.recent_categories(id_user, cat, date)
 
+    prices_graph = []
+    for item in data.items:
+        prices_graph.append({"price": item.price})
+
+    return {"list": data.items, "total": data.total, "average": data.average, "prices_graph": data.prices_graph}
+
+@app.get("/screen-context")
+async def get_screen_view():
+    return await ai.get_screen_context(page_view())
 
 if __name__ == "__main__":
     import uvicorn
