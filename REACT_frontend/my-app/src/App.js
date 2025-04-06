@@ -3,8 +3,6 @@ import './App.css';
 import ChatAssistant from './ChatAssistant';
 import { login, signup } from './AuthService';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import Webcam from 'react-webcam';
-import { useRef } from 'react';
 
 const Login = ({ onLogin }) => {
   const [isLogin, setIsLogin] = useState(true);
@@ -88,26 +86,9 @@ const [locationStatus, setLocationStatus] = useState('');
 const [selectedCategory, setSelectedCategory] = useState(null);
 const [days, setDays] = useState(0);
 const [isLoading, setIsLoading] = useState(false);
-const webRef = useRef(null);
-  const showImage = () => {
-    const file = webRef.current.getScreenshot();
-    console.log(file);
-
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("email", username);
-  
-        fetch('http://localhost:8000/upload-image', {
-          method: 'POST',
-          body: formData,
-          headers: {
-            'Authorization': `Bearer ${sessionStorage.getItem('token')}`
-          }
-        }).then(response => {
-          if (!response.ok) throw new Error('Upload failed');
-          return response.json();
-        }).catch(error => console.error('Upload error:', error));
-  };
+const [pageData, setPageData] = useState(null);
+const [pageLoading, setPageLoading] = useState(false);
+const [pageError, setPageError] = useState(null);
 
 useEffect(() => {
   if (userId) {
@@ -136,11 +117,35 @@ useEffect(() => {
   }
 }, [userId, chartRefreshTrigger]);
   
+// Add useEffect for fetching category data
+useEffect(() => {
+  if (userId) {
+    setPageLoading(true);
+    fetch(`http://localhost:8000/get-page-value?cat=Entertainment,days=30`, {
+      headers: {
+        'Authorization': `Bearer ${sessionStorage.getItem('token')}`
+      }
+    })
+    .then(response => {
+      if (!response.ok) throw new Error('Failed to fetch page data');
+      return response.json();
+    })
+    .then(data => {
+      setPageData(data);
+      setPageError(null);
+    })
+    .catch(error => {
+      console.error('Page data error:', error);
+      setPageError(error.message);
+    })
+    .finally(() => setPageLoading(false));
+  }
+}, [userId]);
+
 
   // Create chart component
   const CategoryPieChart = () => (
     <div className="chart-container">
-      <h3>Spending by Category</h3>
       {chartLoading ? (
         <div className="loading-message">Loading chart data...</div>
       ) : chartError ? (
@@ -363,6 +368,49 @@ useEffect(() => {
       setIsLoading(false);
     }
   };
+
+  // Create CategoriesTab component
+const CategoriesTab = () => (
+  <div className="content-area">
+    <div className="header-row">
+      <div className="user-greeting">
+        <h2>Category Analysis</h2>
+        <p>Your spending breakdown</p>
+      </div>
+    </div>
+
+    {pageLoading ? (
+      <div className="loading-message">Analyzing your spending...</div>
+    ) : pageError ? (
+      <div className="error-message">{pageError}</div>
+    ) : pageData ? (
+      <div className="cost-analysis">
+        <div className="cost-card total-cost">
+          <h3>Total Spending</h3>
+          <div className="cost-value">
+            ${pageData.totalCost.toFixed(2)}
+          </div>
+          <div className="cost-period">
+            All time
+          </div>
+        </div>
+        
+        <div className="cost-card average-cost">
+          <h3>Average Monthly</h3>
+          <div className="cost-value">
+            ${pageData.averageCost.toFixed(2)}
+          </div>
+          <div className="cost-period">
+            Per month
+          </div>
+        </div>
+      </div>
+    ) : (
+      <div className="no-data">No spending data available</div>
+    )}
+  </div>
+);
+
   const TabButton = ({ name, label }) => (
     <button 
       className={`tab-button ${activeTab === name ? 'active' : ''}`}
@@ -386,7 +434,7 @@ useEffect(() => {
         Category: "Food",
         Items: [{ name: "Apples", price: 5.00 }, { name: "Bread", price: 3.00 }]
       },
-      // Add more sample receipts...
+  
     ];
   
     return (
@@ -400,7 +448,7 @@ useEffect(() => {
   
         {/* Analytics Section */}
         <div className="analytics-section">
-          <h3>Spending Overview</h3>
+          <h3>Spending overview by category</h3>
           <div className="chart-container">
             <CategoryPieChart />
           </div>
@@ -471,8 +519,6 @@ useEffect(() => {
           <label htmlFor="upload-input" className="upload-button">
             Upload image
           </label>
-          <Webcam ref={webRef} />
-          <button onClick={() => {showImage();}} className="capture-button">Capture</button>
           <div className="image-preview-container">
             {images.map((image, index) => (
               <div key={index} className="image-preview">
@@ -507,54 +553,83 @@ useEffect(() => {
         <h2 className="sidebar-title">Records</h2>
         <div className="tabs-container">
           <TabButton name="Home" label="Home" />
-          <TabButton name="TabX" label="Tabx" />
+          <TabButton name="Categories" label="Categories" />
           <TabButton name="History" label="History" />
           <TabButton name="Settings" label="Settings" />
         </div>
       </div>
       {activeTab === 'Home' && <TabContent>Home</TabContent>}
-      {activeTab === 'TabX' && <TabContent>Tab X Content</TabContent>}
+      {activeTab === 'Categories' && <CategoriesTab />}
       {activeTab === 'History' && (
-        <div className="content-area">
-          <div className="header-row">
-            <div className="user-greeting">
-              <h2>History</h2>
-              <p>Recent Receipts</p>
-            </div>
-            <div className="days-input-container">
-              <input
-                type="number"
-                placeholder="Days"
-                value={days}
-                onChange={(e) => setDays(e.target.value)}
-                className="days-input"
-              />
-              <button 
-                onClick={fetchRecentReceipts} 
-                className="fetch-button"
-              >
-                Fetch Receipts
-              </button>
-            </div>
-          </div>
-          
-          {isLoading ? (
-            <div className="loading-message">Loading receipts...</div>
-          ) : (
-            <div className="receipts-list">
-              {receipts.map((receipt, index) => (
-                <div key={index} className="receipt-card">
-                  <h3>{receipt.Merchant}</h3>
-                  <p>Date: {receipt.Date}</p>
-                  <p>Total: ${receipt.Total}</p>
-                  <p>Category: {receipt.Category}</p>
-                  {/* Add more receipt details as needed */}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+  <div className="content-area">
+    <div className="header-row">
+      <div className="user-greeting">
+        <h2>History</h2>
+        <p>Recent Receipts</p>
+      </div>
+      <div className="days-input-container">
+        <input
+          type="number"
+          placeholder="Days"
+          value={days}
+          onChange={(e) => setDays(e.target.value)}
+          className="days-input"
+        />
+        <button 
+          onClick={fetchRecentReceipts} 
+          className="fetch-button"
+        >
+          Fetch Receipts
+        </button>
+      </div>
+    </div>
+    
+    {isLoading ? (
+      <div className="loading-message">Loading receipts...</div>
+    ) : (
+      <div className="receipts-table-container">
+        <table className="receipts-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Merchant</th>
+              <th>Total</th>
+              <th>Receipt ID</th>
+            </tr>
+          </thead>
+          <tbody>
+            {receipts.map((receipt, index) => {
+              const [dateString, merchant, total, receiptId] = receipt;
+              const date = new Date(dateString);
+              
+              return (
+                <tr key={index} className="receipt-row">
+                  <td>
+                    {date.toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </td>
+                  <td className="merchant-cell">{merchant}</td>
+                  <td className="total-cell">
+                    ${total.toFixed(2)}
+                  </td>
+                  <td className="receipt-id">{receiptId}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        {receipts.length === 0 && (
+          <div className="no-receipts">No receipts found for this period</div>
+        )}
+      </div>
+    )}
+  </div>
+)}
       {activeTab === 'Settings' && (
   <div className="content-area">
     <div className="header-row">

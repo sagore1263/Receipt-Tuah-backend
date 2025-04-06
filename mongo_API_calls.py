@@ -82,7 +82,7 @@ async def get_recent_receipts(id_user, days):
     if not id_user or id_user == "":
         return "Invalid User ID"
     async with aiohttp.ClientSession() as session:
-        url = f"{DB_HOST}/getPurchases?id={id_user}&num={days}"
+        url = f"{DB_HOST}/getPurchases?id={id_user}&num={days}&type=date"
         print(f"Making request to: {url}")
         async with session.get(url) as response:
             if response.status == 200:
