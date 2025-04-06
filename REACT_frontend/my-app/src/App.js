@@ -3,6 +3,8 @@ import './App.css';
 import ChatAssistant from './ChatAssistant';
 import { login, signup } from './AuthService';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import Webcam from 'react-webcam';
+import { useRef } from 'react';
 
 const Login = ({ onLogin }) => {
   const [isLogin, setIsLogin] = useState(true);
@@ -76,6 +78,34 @@ const [userId, setUserId] = useState('');
 const [chartLoading, setChartLoading] = useState(true);
 const [chartError, setChartError] = useState(null);
 const [chartRefreshTrigger, setChartRefreshTrigger] = useState(0);
+const [useLocation, setUseLocation] = useState(
+  sessionStorage.getItem('useLocation') === 'true'
+);
+const [location, setLocation] = useState(
+  sessionStorage.getItem('userLocation') || ''
+);
+const [locationStatus, setLocationStatus] = useState('');
+const [selectedCategory, setSelectedCategory] = useState(null);
+const webRef = useRef(null);
+  const showImage = () => {
+    const file = webRef.current.getScreenshot();
+    console.log(file);
+
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("email", username);
+  
+        fetch('http://localhost:8000/upload-image', {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'Authorization': `Bearer ${sessionStorage.getItem('token')}`
+          }
+        }).then(response => {
+          if (!response.ok) throw new Error('Upload failed');
+          return response.json();
+        }).catch(error => console.error('Upload error:', error));
+  };
 
 useEffect(() => {
   if (userId) {
@@ -103,16 +133,8 @@ useEffect(() => {
       .finally(() => setChartLoading(false));
   }
 }, [userId, chartRefreshTrigger]);
-  // Add state for selected category
-  const [selectedCategory, setSelectedCategory] = useState(null);
-const sampleCategoryData = [
-  { name: 'Food', value: 400 },
-  { name: 'Utilities', value: 300 },
-  { name: 'Shopping', value: 300 },
-  { name: 'Travel', value: 200 },
-  { name: 'Other', value: 278 },
-];
   
+
   // Create chart component
   const CategoryPieChart = () => (
     <div className="chart-container">
@@ -151,6 +173,39 @@ const sampleCategoryData = [
       )}
     </div>
   );
+
+  const handleLocationSubmit = async () => {
+    try {
+      const response = await fetch('http://localhost:3001/setSettings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          settings: {
+            location: location,
+            useLocation: useLocation,
+          },
+          id: userId
+        })
+      });
+  
+      if (!response.ok) throw new Error('Location update failed');
+      
+      const data = await response.json();
+      setLocationStatus('Location updated successfully!');
+      sessionStorage.setItem('userLocation', location);
+      
+      // Clear status after 3 seconds
+      setTimeout(() => setLocationStatus(''), 3000);
+      
+    } catch (error) {
+      console.error('Location error:', error);
+      setLocationStatus('Error updating location');
+      setTimeout(() => setLocationStatus(''), 3000);
+    }
+  };
 
   useEffect(() => {
     const authStatus = sessionStorage.getItem('isAuthenticated');
@@ -314,9 +369,6 @@ const sampleCategoryData = [
             <h2>{children}</h2>
             <p>Welcome, {username}</p>
           </div>
-          <button onClick={handleLogout} className="logout-button">
-            Logout
-          </button>
         </div>
   
         {/* Analytics Section */}
@@ -392,6 +444,8 @@ const sampleCategoryData = [
           <label htmlFor="upload-input" className="upload-button">
             Upload image
           </label>
+          <Webcam ref={webRef} />
+          <button onClick={() => {showImage();}} className="capture-button">Capture</button>
           <div className="image-preview-container">
             {images.map((image, index) => (
               <div key={index} className="image-preview">
@@ -422,19 +476,79 @@ const sampleCategoryData = [
   return (
     <div className="app-container">
       <div className="sidebar">
-        <h1 className="logo">Receipt Tuah</h1>
+        <h1 className="logo">Expense Expert</h1>
         <h2 className="sidebar-title">Records</h2>
         <div className="tabs-container">
           <TabButton name="Home" label="Home" />
           <TabButton name="TabX" label="Tabx" />
-          <TabButton name="TabY" label="Taby" />
-          <TabButton name="TabZ" label="Tabz" />
+          <TabButton name="History" label="History" />
+          <TabButton name="Settings" label="Settings" />
         </div>
       </div>
       {activeTab === 'Home' && <TabContent>Home</TabContent>}
       {activeTab === 'TabX' && <TabContent>Tab X Content</TabContent>}
-      {activeTab === 'TabY' && <TabContent>Tab Y Content</TabContent>}
-      {activeTab === 'TabZ' && <TabContent>Tab Z Content</TabContent>}
+      {activeTab === 'History' && <TabContent>Tab Y Content</TabContent>}
+      {activeTab === 'Settings' && (
+  <div className="content-area">
+    <div className="header-row">
+      <div className="user-greeting">
+        <h2>Settings</h2>
+        <p>Account Preferences</p>
+      </div>
+    </div>
+    
+    <div className="settings-container">
+      <div className="setting-group">
+        <label className="location-toggle">
+          <input
+            type="checkbox"
+            checked={useLocation}
+            onChange={(e) => {
+              setUseLocation(e.target.checked);
+              sessionStorage.setItem('useLocation', e.target.checked);
+              if (!e.target.checked) setLocation('');
+            }}
+          />
+          <span>I want answers based on my location</span>
+        </label>
+        
+        {useLocation && (
+          <div className="location-input-group">
+            <input
+              type="text"
+              placeholder="Enter your location"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              className="location-input"
+            />
+            <button
+              onClick={handleLocationSubmit}
+              className="location-submit-button"
+            >
+              Save Location
+            </button>
+          </div>
+        )}
+        
+        {locationStatus && (
+          <div className={`location-status ${locationStatus.includes('Error') ? 'error' : 'success'}`}>
+            {locationStatus}
+          </div>
+        )}
+      </div>
+      
+      <div className="setting-group">
+        <h3>Account Actions</h3>
+        <button 
+          onClick={handleLogout} 
+          className="logout-button settings-logout"
+        >
+          Logout
+        </button>
+      </div>
+    </div>
+  </div>
+)}
       <ChatAssistant />
     </div>
   );

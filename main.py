@@ -177,7 +177,7 @@ async def page_view(cat: str, date: str):
             "item_names": list(item_names),
             "statistics": counts}
 @app.get("/get-recent-receipts")
-async def get_recent_receipts():
+async def get_recent_receipts(days: int):
     if not id_user or id_user == "":
         return "Invalid User ID"
     data = await mAPI.get_recent_receipts(id_user)

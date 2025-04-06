@@ -396,3 +396,84 @@ body {
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   }
 }
+/* Settings Tab Styles */
+.settings-container {
+  max-width: 600px;
+  margin: 20px auto;
+  padding: 25px;
+  background: rgb(17, 4, 23);
+  border-radius: 15px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.setting-group {
+  margin-bottom: 30px;
+  padding: 20px;
+  border: 2px solid #f0f0f0;
+  border-radius: 10px;
+}
+
+.location-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+}
+
+.location-toggle input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--text-white)
+}
+
+.location-input-group {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.location-input {
+  flex: 1;
+  padding: 10px 15px;
+  border: 2px solid var(--secondary);
+  border-radius: 25px;
+  font-size: 1rem;
+}
+
+.location-submit-button {
+  padding: 10px 25px;
+  background:white;
+  color: purple;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.location-submit-button:hover {
+  transform: scale(1.05);
+}
+
+.location-status {
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+.location-status.success {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.location-status.error {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.settings-logout {
+  width: 100%;
+  padding: 15px;
+  font-size: 1.1rem;
+}
