@@ -147,7 +147,7 @@ async def page_view(cat: str, date: str):
     data = await mAPI.recent_categories(id_user, cat, date)
 
     prices_graph = []
-    for item in data.items:
+    for item in data["items"]:
         prices_graph.append({"price": item.price})
 
     return {"list": data.items, "total": data.total, "average": data.average, "prices_graph": data.prices_graph}
