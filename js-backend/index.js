@@ -195,14 +195,14 @@ app.get('/userdata', async (req, res) => {
             populate: [
                 {
                     path: 'items',
-                    select: 'name purchase quantity price -__v'
+                    select: 'name purchase quantity price'
                 },
                 {
                     path: 'subcategories',
                     select: 'name items',
                     populate: {
                         path: 'items',
-                        select: 'name purchase quantity price -__v'
+                        select: 'name purchase quantity price'
                     }
                 }
             ]
@@ -352,10 +352,14 @@ app.get('/itemsByCategory', async (req, res) => {
 
     const result = await categoryDoc.populate({
         path: 'items',
-        select: 'name quantity price -_id',
+        select: 'name quantity subcategory purchase price',
+        populate: {
+            path: 'subcategory',
+            select: 'name',
+        }
     });
 
-    res.status(200).json({ message: 'success', items: result });
+    res.status(200).json({ message: 'success', items: result.items });
 });
 
 app.listen(PORT, () => {
