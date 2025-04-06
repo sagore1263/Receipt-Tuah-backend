@@ -13,7 +13,10 @@ const PORT = process.env.MONGO_PORT || 3001;
 const purchasePopulate = [
     {
         path: 'items',
-        select: '-purchase -__v -_id'
+        select: '-purchase -__v -_id',
+        // populate: {
+        //     path: ''
+        // }
     }
 ];
 
@@ -35,21 +38,6 @@ app.use(cors({
     credentials: true
   }));
 app.use(express.json({ limit: '10mb' }));
-
-/**
- * Utility
- */
-
-app.get('/', async (req, res) => {
-    res.json({ message: 'Welcome to the Express API!' });
-});
-
-app.post('/data', async (req, res) => {
-    const receivedData = req.body;
-    console.log('Received JSON:', receivedData);
-  
-    res.status(200).json({ message: 'JSON received successfully', data: receivedData });
-});
 
 /**
  * User auth
@@ -190,7 +178,7 @@ app.get('/userdata', async (req, res) => {
     }
 
     // Populate the account with purchases and categories
-    const { settings, data } = await account.lean().populate([
+    const { settings, data } = await account.populate([
         {
             path: 'data.purchases',
             select: '-account -__v -_id',
